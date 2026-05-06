@@ -1,0 +1,321 @@
+{% extends "users/index.html" %}
+
+
+
+
+{% block title %}{% if issue %}Edit Issue{% else %}New Issue{% endif %} | Bug Tracker{% endblock %}
+
+
+
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-4">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">bug_report</span>
+        <div>
+            <p class="small mb-1 text-white-50 my-3">
+                <a href="{% url 'issues:project_detail' project.pk %}" class="text-decoration-none text-white-50">
+                    {{ project.name }}
+                </a>
+                &raquo;
+                {% if issue %}Edit Issue{% else %}New Issue{% endif %}
+            </p>
+            <h1 class="text-white fw-bold mb-0">
+                {% if issue %}Edit Issue{% else %}New Issue{% endif %}
+            </h1>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-3">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+
+    <div class="row">
+        {# LEFT: main content (description, remarks, qa, attachments) #}
+        <div class="col-lg-8">
+            <div class="glass-card p-4 mb-4">
+                {# Top meta fields (project, title, status, priority) #}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.project %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.title %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {% with field=form.status %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {% with field=form.priority %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {% with field=form.environment %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {% with field=form.issue_type %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="glass-card p-4 mb-4">
+                {# Description #}
+                <h5 class="text-white mb-3">Description</h5>
+                <div class="mb-3">
+                    {% with field=form.description %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-white-50">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+
+
+            <div class="glass-card p-4 mb-4">
+                {# Remarks / QA note #}
+                <h5 class="text-white mb-3">Remarks</h5>
+                <div class="mb-3">
+                    {% with field=form.remarks %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+
+
+                <h5 class="text-white mb-3">QA Note</h5>
+                <div class="mb-3">
+                    {% with field=form.qa_note %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+
+
+            <div class="glass-card p-4 mb-4">
+                {# Attachments #}
+                <h5 class="text-white mb-3">Attachments</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.image_1 %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {% if issue and issue.image_1 %}
+                                <div class="mb-2">
+                                    <img src="{{ issue.image_1.url }}" alt="Image 1" class="img-fluid rounded">
+                                </div>
+                            {% endif %}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.image_2 %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {% if issue and issue.image_2 %}
+                                <div class="mb-2">
+                                    <img src="{{ issue.image_2.url }}" alt="Image 2" class="img-fluid rounded">
+                                </div>
+                            {% endif %}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.image_3 %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {% if issue and issue.image_3 %}
+                                <div class="mb-2">
+                                    <img src="{{ issue.image_3.url }}" alt="Image 3" class="img-fluid rounded">
+                                </div>
+                            {% endif %}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.image_4 %}
+                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {% if issue and issue.image_4 %}
+                                <div class="mb-2">
+                                    <img src="{{ issue.image_4.url }}" alt="Image 4" class="img-fluid rounded">
+                                </div>
+                            {% endif %}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        {# RIGHT: details-style sidebar #}
+        <div class="col-lg-4">
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-white mb-3">People & Estimate</h5>
+                <div class="mb-3">
+                    {% with field=form.reporter %}
+                        <label class="form-label text-white">{{ field.label }}</label>
+                        <input type="text" 
+                            class="form-control bg-secondary text-white" 
+                            value="{{ request.user.get_full_name|default:request.user.username }}" 
+                            readonly>
+                        <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:request.user.id }}">
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="mb-3">
+                    {% with field=form.assignee %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <div class="mb-3">
+                    {% with field=form.time_estimate_hours %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-white-50">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+
+
+                {% if issue %}
+                    <hr class="border-secondary">
+                    <p class="mb-1 text-white-50 small">
+                        Created: {{ issue.created_at }}
+                    </p>
+                    <p class="mb-0 text-white-50 small">
+                        Updated: {{ issue.updated_at }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <div class="d-flex justify-content-between mt-3">
+        <a href="{% if issue %}{% url 'issues:issue_detail' issue.pk %}{% else %}{% url 'issues:project_detail' project.pk %}{% endif %}"
+           class="btn btn-outline-light">
+            Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+            {% if issue %}Save Changes{% else %}Create Issue{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}
+{% endblock %}

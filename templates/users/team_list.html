@@ -1,0 +1,91 @@
+{% extends "users/index.html" %}
+
+
+{% block title %}Teams - Bug Tracker{% endblock %}
+
+
+{% block nav_teams_active %}active{% endblock %}
+
+
+{% block dashboard_content %}
+    {% block page_header %}
+    <div class="row mb-5">
+        <div class="col d-flex align-items-center">
+            <span class="material-icons text-white fs-1 me-2">groups</span>
+            <div>
+                <h1 class="text-white fw-bold mb-1">Teams</h1>
+                <p class="text-white-50 mb-0">Manage your project teams and collaborators.</p>
+            </div>
+        </div>
+        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+                <div class="col-auto d-flex align-items-center">
+                    <a href="{% url 'users:team_create' %}"
+                    class="btn btn-light text-primary fw-semibold d-flex align-items-center">
+                        <span class="material-icons me-1">add</span>
+                        Add Team
+                    </a>
+                </div>
+        {% endif %}
+    </div>
+    {% endblock %}
+
+
+    {% block content %}
+    <style>
+        .dashboard-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    </style>
+    <div class="row g-4">
+        {% for team in teams %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="glass-card dashboard-card p-4 h-100">
+                
+                <div class="d-flex align-items-start mb-2">
+                    <div class="me-2">
+                        <span class="material-icons text-white">group</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold text-white mb-1">{{ team.name }}</h5>
+                        <p class="text-white-50 mb-2">{{ team.description|truncatewords:15 }}</p>
+                        <small class="text-white-50 d-flex align-items-center mb-2">
+                            <span class="material-icons small me-1">access_time</span>
+                            {{ team.created_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                </div>
+                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'users:team_edit' team.pk %}"
+                       class="btn btn-sm btn-light text-primary d-flex align-items-center">
+                        <span class="material-icons me-1" style="font-size:16px;">edit</span>
+                        Edit
+                    </a>
+                    <a href="{% url 'users:team_delete' team.pk %}"
+                       class="btn btn-sm btn-outline-light text-danger d-flex align-items-center">
+                        <span class="material-icons me-1" style="font-size:16px;">delete</span>
+                        Delete
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="glass-card text-center py-5">
+                <span class="material-icons fs-1 text-white-50 mb-3">groups</span>
+                <h4 class="text-white-50 mb-1">No teams found</h4>
+                <p class="text-white-50 mb-3">Create your first team to start organizing your work.</p>
+                <a href="{% url 'users:team_create' %}"
+                   class="btn btn-light text-primary fw-semibold d-inline-flex align-items-center">
+                    <span class="material-icons me-1">add</span>
+                    Add Team
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endblock %}
+{% endblock %}

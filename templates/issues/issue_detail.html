@@ -1,0 +1,333 @@
+{% extends "users/index.html" %}
+{% load text_filters %}
+
+
+{% block title %}{{ issue.title }} | Issue | Bug Tracker{% endblock %}
+
+
+
+{% block nav_projects_active %}active{% endblock %}
+
+
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-4">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">bug_report</span>
+        <div>
+            <p class="small mb-1 text-white-50 my-3">
+                <a href="{% url 'issues:project_detail' issue.project.pk %}" class="text-decoration-none text-white-50">
+                    {{ issue.project.name }}
+                </a>
+                &raquo; Issue
+            </p>
+            <h1 class="text-white fw-bold mb-0 fs-3">{{ issue.title }}</h1>
+        </div>
+    </div>
+    {% if issue.can_edit %}
+    <div class="col-auto d-flex align-items-center">
+        <a href="{% url 'issues:issue_update' issue.pk %}"
+           class="btn btn-light text-primary fw-semibold d-flex align-items-center">
+            <span class="material-icons me-1">edit</span>
+            Edit Issue
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+{% block content %}
+<style>
+    .glass-card select,
+    .glass-card textarea,
+    .glass-card input {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+    .glass-card select option {
+        background-color: #1a1a1a;
+        color: white;
+    }
+    .glass-card ::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+    }
+    .dashboard-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+</style>
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="glass-card dashboard-card p-4 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge bg-info text-dark">
+                        {{ issue.get_status_display }}
+                    </span>
+                    <span class="badge bg-secondary">
+                        {{ issue.get_priority_display }}
+                    </span>
+                    <span class="badge bg-primary">
+                        {{ issue.get_environment_display }}
+                    </span>
+                </div>
+                <div class="small text-white">
+                    Updated {{ issue.updated_at|date:"Y-m-d H:i" }}
+                </div>
+            </div>
+
+
+
+            {% if issue.description %}
+                <h2 class="h6 text-white">Description</h2>
+                <div class="my-3 p-3" style="color: white !important; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">{{ issue.description|linebreaks }}</div>
+            {% endif %}
+
+
+
+            <div class="row g-2 mb-3">
+                {% if issue.image_1 %}
+                    <div class="col-6 col-md-3">
+                        <a href="{{ issue.image_1.url }}" target="_blank">
+                            <img src="{{ issue.image_1.url }}" alt="Screenshot" class="img-fluid rounded border">
+                        </a>
+                    </div>
+                {% endif %}
+                {% if issue.image_2 %}
+                    <div class="col-6 col-md-3">
+                        <a href="{{ issue.image_2.url }}" target="_blank">
+                            <img src="{{ issue.image_2.url }}" alt="Screenshot" class="img-fluid rounded border">
+                        </a>
+                    </div>
+                {% endif %}
+                {% if issue.image_3 %}
+                    <div class="col-6 col-md-3">
+                        <a href="{{ issue.image_3.url }}" target="_blank">
+                            <img src="{{ issue.image_3.url }}" alt="Screenshot" class="img-fluid rounded border">
+                        </a>
+                    </div>
+                {% endif %}
+                {% if issue.image_4 %}
+                    <div class="col-6 col-md-3">
+                        <a href="{{ issue.image_4.url }}" target="_blank">
+                            <img src="{{ issue.image_4.url }}" alt="Screenshot" class="img-fluid rounded border">
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+
+
+            {% if issue.remarks %}
+                <h2 class="h6 text-white mt-3">Remarks</h2>
+                <div class="my-3 p-3" style="color: white !important; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">{{ issue.remarks|linebreaks }}</div>
+            {% endif %}
+
+
+
+            {% if issue.qa_note %}
+                <h2 class="h6 text-white mt-3">QA Note</h2>
+                <div class="my-3 p-3" style="color: white !important; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">{{ issue.qa_note|linebreaks }}</div>
+            {% endif %}
+        </div>
+
+
+
+        <div class="glass-card dashboard-card p-4 mb-3">
+            <h2 class="h6 text-white mb-3">Discussion / Activity</h2>
+
+
+
+            <form method="post" action="{% url 'issues:issue_add_remark' issue.pk %}" class="mb-4">
+                {% csrf_token %}
+                {{ remark_form.issue.as_hidden }}
+
+
+
+                <div class="mb-2">
+                    <label class="form-label small text-white" for="{{ remark_form.to_status.id_for_label }}">
+                        New Status
+                    </label>
+                    {{ remark_form.to_status }}
+                </div>
+
+
+
+                <div class="mb-2">
+                    <label class="form-label small text-white" for="{{ remark_form.remark.id_for_label }}">
+                        Remark
+                    </label>
+                    {{ remark_form.remark }}
+                </div>
+
+
+
+                <div class="mb-3">
+                    <label class="form-label small text-white" for="{{ remark_form.qa_note.id_for_label }}">
+                        QA Note
+                    </label>
+                    {{ remark_form.qa_note }}
+                </div>
+
+
+
+                <button type="submit" class="btn btn-sm btn-light text-primary">
+                    Add Log
+                </button>
+            </form>
+
+            <h2 class="h6 text-white mb-3">Issue History Log</h2>
+            {% if remark_logs %}
+                <div class="d-flex flex-column gap-3">
+                    {% for log in remark_logs %}
+                        <div class="glass-card p-3 bg-dark">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <div class="text-white">
+                                    {% if log.author %}
+                                        {{ log.author.get_short_name|default:log.author.username }}
+                                    {% else %}
+                                        <em>System</em>
+                                    {% endif %}
+                                </div>
+                                <div class="text-white">
+                                    {{ log.created_at|date:"Y-m-d H:i" }}
+                                </div>
+                            </div>
+                            {% if log.from_status or log.to_status %}
+                                <div class="small text-white mb-1">
+                                    Status:
+                                    {% with from_label=log.get_from_status_display|default_if_none:"" to_label=log.get_to_status_display|default_if_none:"" %}
+                                        {% if log.from_status %}
+                                            <span class="badge bg-secondary">
+                                                {% if from_label %}
+                                                    {{ from_label }}
+                                                {% else %}
+                                                    {{ log.from_status|default:"-"|underscore_to_space|title }}
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">-</span>
+                                        {% endif %}
+                                        <span class="mx-1">→</span>
+                                        {% if log.to_status %}
+                                            <span class="badge bg-info text-dark">
+                                                {% if to_label %}
+                                                    {{ to_label }}
+                                                {% else %}
+                                                    {{ log.to_status|default:"-"|underscore_to_space|title }}
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-info text-dark">-</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            {% endif %}
+                            {% if log.remark %}
+                                <div class="small text-white mb-1">
+                                    <strong>Remark:</strong> {{ log.remark|linebreaks }}
+                                </div>
+                            {% endif %}
+                            {% if log.qa_note %}
+                                <div class="small text-white mb-0">
+                                    <strong>QA Note:</strong> {{ log.qa_note|linebreaks }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-white small">
+                    No activity logs yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+
+
+    <div class="col-md-4">
+        <div class="glass-card dashboard-card p-4 mb-3">
+            <h2 class="h6 text-white mb-3">Details</h2>
+            <dl class="row mb-0 small text-white">
+                <dt class="col-5">Status</dt>
+                <dd class="col-7">
+                    <span class="badge bg-info text-dark">
+                        {{ issue.get_status_display }}
+                    </span>
+                </dd>
+
+
+
+                <dt class="col-5">Priority</dt>
+                <dd class="col-7">
+                    <span class="badge bg-secondary">
+                        {{ issue.get_priority_display }}
+                    </span>
+                </dd>
+
+
+                <dt class="col-5">Environment</dt>
+                <dd class="col-7">
+                    <span class="badge bg-primary">
+                        {{ issue.get_environment_display }}
+                    </span>
+                </dd>
+
+
+
+                <dt class="col-5">Assignee</dt>
+                <dd class="col-7">
+                    {% if issue.assignee %}
+                        {{ issue.assignee.get_short_name|default:issue.assignee.username }}
+                    {% else %}
+                        <em>Unassigned</em>
+                    {% endif %}
+                </dd>
+                
+
+
+
+                <dt class="col-5">Reporter</dt>
+                <dd class="col-7">
+                    {% if issue.reporter %}
+                        {{ issue.reporter.get_short_name|default:issue.reporter.username }}
+                    {% else %}
+                        <em>-</em>
+                    {% endif %}
+                </dd>
+
+
+
+                <dt class="col-5">Estimate</dt>
+                <dd class="col-7">
+                    {% if issue.time_estimate_hours %}
+                        {{ issue.time_estimate_hours }} h
+                    {% else %}
+                        <em>Not set</em>
+                    {% endif %}
+                </dd>
+
+
+
+                <dt class="col-5">Created</dt>
+                <dd class="col-7">
+                    {{ issue.created_at|date:"Y-m-d H:i" }}
+                </dd>
+
+
+
+                <dt class="col-5">Updated</dt>
+                <dd class="col-7">
+                    {{ issue.updated_at|date:"Y-m-d H:i" }}
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% endblock %}

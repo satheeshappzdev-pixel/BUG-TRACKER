@@ -1,0 +1,103 @@
+{% extends "users/index.html" %}
+
+{% block title %}Projects - Bug Tracker{% endblock %}
+
+{% block nav_projects_active %}active{% endblock %}
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-5">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">folder</span>
+        <div>
+            <h1 class="text-white fw-bold mb-1">Projects</h1>
+            <p class="text-white-50 mb-0">Manage your projects and their issues.</p>
+        </div>
+    </div>
+    {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'issues:project_create' %}"
+            class="btn btn-light text-primary fw-semibold d-flex align-items-center">
+                <span class="material-icons me-1">add</span>
+                New Project
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    {% for project in projects %}
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex align-items-start mb-2">
+                <div class="me-2">
+                    <span class="material-icons text-white">folder</span>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="fw-bold text-white mb-1">
+                        <a href="{% url 'issues:project_detail' project.pk %}" class="text-decoration-none text-white">
+                            {{ project.name }}
+                        </a>
+                    </h5>
+                    {% if project.code %}
+                        <p class="text-white-50 mb-1 small">Code: {{ project.code }}</p>
+                    {% endif %}
+                    {% if project.description %}
+                        <p class="text-white-50 mb-2">
+                            {{ project.description|truncatewords:15 }}
+                        </p>
+                    {% endif %}
+                    <small class="text-white-50 d-flex align-items-center mb-2">
+                        <span class="material-icons small me-1">person</span>
+                        Owner:
+                        {% if project.owner %}
+                            &nbsp;{{ project.owner.get_short_name|default:project.owner.username }}
+                        {% else %}
+                            &nbsp;<em>Unassigned</em>
+                        {% endif %}
+                    </small>
+                    <small class="text-white-50 d-flex align-items-center">
+                        <span class="material-icons small me-1">bug_report</span>
+                        {{ project.issues.count }} issues
+                        {% if project.is_active %}
+                            &nbsp;•&nbsp;<span class="badge bg-success ms-1">Active</span>
+                        {% else %}
+                            &nbsp;•&nbsp;<span class="badge bg-secondary ms-1">Inactive</span>
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a href="{% url 'issues:project_detail' project.pk %}"
+                   class="btn btn-sm btn-light text-primary d-flex align-items-center">
+                    <span class="material-icons me-1" style="font-size:16px;">visibility</span>
+                    View
+                </a>
+                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+                <a href="{% url 'issues:project_update' project.pk %}"
+                   class="btn btn-sm btn-outline-light text-white d-flex align-items-center">
+                    <span class="material-icons me-1" style="font-size:16px;">edit</span>
+                    Edit
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="glass-card text-center py-5">
+            <span class="material-icons fs-1 text-white-50 mb-3">folder</span>
+            <h4 class="text-white-50 mb-1">No projects found</h4>
+            <p class="text-white-50 mb-3">Create your first project to start tracking issues.</p>
+            <a href="{% url 'issues:project_create' %}"
+               class="btn btn-light text-primary fw-semibold d-inline-flex align-items-center">
+                <span class="material-icons me-1">add</span>
+                New Project
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+{% endblock %}

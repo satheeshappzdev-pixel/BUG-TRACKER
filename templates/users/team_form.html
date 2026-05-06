@@ -1,0 +1,50 @@
+{% extends "users/index.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Team - Bug Tracker{% else %}Create Team - Bug Tracker{% endif %}{% endblock %}
+
+{% block nav_teams_active %}active{% endblock %}
+{% block dashboard_content %}
+    {% block page_header %}
+    <div class="row mb-5">
+        <div class="col d-flex align-items-center">
+            <span class="material-icons text-white fs-1 me-2">group_add</span>
+            <div>
+                <h1 class="text-white fw-bold mb-1">
+                    {% if form.instance.pk %}Edit Team{% else %}Create Team{% endif %}
+                </h1>
+                <p class="text-white-50 mb-0">Define your team details and description.</p>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="glass-card p-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-white">Team Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-white">Description</label>
+                    {{ form.description }}
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'users:team_list' %}" class="btn btn-outline-light d-flex align-items-center">
+                        <span class="material-icons me-1">close</span>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-light text-primary d-flex align-items-center">
+                        <span class="material-icons me-1">save</span>
+                        Save Team
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% endblock %}

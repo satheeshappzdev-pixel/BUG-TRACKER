@@ -1,0 +1,139 @@
+{% extends "users/index.html" %}
+
+{% block title %}Issues | Bug Tracker{% endblock %}
+
+{% block nav_my_issues_active %}active{% endblock %}
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-5">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">bug_report</span>
+        <div>
+            <h1 class="text-white fw-bold mb-1">Issues</h1>
+            <p class="text-white-50 mb-0">Browse and manage issues across all projects.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{# Search card #}
+<div class="glass-card p-3 mb-3 text-white">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Search</h2>
+        <form method="get" class="d-flex align-items-center" style="max-width: 480px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <span class="material-icons text-white-50" style="font-size:28px;">search</span>
+                </span>
+                <input type="text"
+                       name="q"
+                       value="{{ request.GET.q }}"
+                       class="form-control bg-white border-start-0 text-black"
+                       placeholder="Search by title, project, assignee, reporter...">
+                <button type="submit"
+                        class="btn btn-light text-primary fw-semibold d-flex align-items-center ms-2">
+                    <span class="material-icons" style="font-size:28px;">search</span>
+                    <span class="ms-1">Search</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Issues cards #}
+{% if issues %}
+    <div class="row g-3">
+        {% for issue in issues %}
+            {% if not request.GET.q or request.GET.q|lower in issue.title|lower %}
+            <div class="col-12 col-md-6">
+                <div class="glass-card p-3 h-100 text-white">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                <a href="{% url 'issues:issue_detail' issue.pk %}"
+                                   class="text-decoration-none text-white">
+                                    {{ issue.title }}
+                                </a>
+                            </h5>
+                            <div class="small text-white-50 mb-1">
+                                <span class="material-icons align-middle me-1" style="font-size:16px;">folder</span>
+                                <a href="{% url 'issues:project_detail' issue.project.pk %}"
+                                   class="text-decoration-none text-white-50">
+                                    {{ issue.project.name }}
+                                </a>
+                            </div>
+                            <div class="small text-white-50">
+                                <span class="badge bg-secondary me-1">
+                                    {{ issue.get_priority_display }}
+                                </span>
+                                <span class="badge bg-info text-dark">
+                                    {{ issue.get_status_display }}
+                                </span>
+                                <span class="badge bg-primary me-1">
+                                    {{ issue.get_environment_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="material-icons text-white-50">
+                            bug_report
+                        </span>
+                    </div>
+
+                    <div class="small text-white-50 mb-1">
+                        Key:
+                        <span class="fw-semibold text-white">
+                            {% if issue.project.code %}
+                                {{ issue.project.code }}-{{ issue.pk }}
+                            {% else %}
+                                #{{ issue.pk }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="small text-white-50 mb-1">
+                        Assignee:
+                        {% if issue.assignee %}
+                            {{ issue.assignee.get_short_name|default:issue.assignee.username }}
+                        {% else %}
+                            <em>Unassigned</em>
+                        {% endif %}
+                    </div>
+                    <div class="small text-white-50 mb-1">
+                        Reporter:
+                        {% if issue.reporter %}
+                            {{ issue.reporter.get_short_name|default:issue.reporter.username }}
+                        {% else %}
+                            <em>-</em>
+                        {% endif %}
+                    </div>
+                    <div class="small text-white-50 mb-3">
+                        Updated: {{ issue.updated_at|date:"Y-m-d H:i" }}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'issues:issue_detail' issue.pk %}"
+                           class="btn btn-sm btn-light text-primary d-inline-flex align-items-center">
+                            <span class="material-icons me-1" style="font-size:16px;">visibility</span>
+                            View
+                        </a>
+                    {% if issue.can_edit %}
+                        <a href="{% url 'issues:issue_update' issue.pk %}"
+                        class="btn btn-sm btn-outline-light text-white d-inline-flex align-items-center">
+                            <span class="material-icons me-1" style="font-size:16px;">edit</span>
+                            Edit
+                        </a>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="glass-card text-center py-4 text-white">
+        <span class="material-icons fs-1 text-white-50 mb-2">bug_report</span>
+        <p class="text-white-50 mb-0">No issues found.</p>
+    </div>
+{% endif %}
+{% endblock %}
+{% endblock %}
