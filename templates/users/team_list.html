@@ -17,7 +17,7 @@
                 <p class="text-white-50 mb-0">Manage your project teams and collaborators.</p>
             </div>
         </div>
-        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
                 <div class="col-auto d-flex align-items-center">
                     <a href="{% url 'users:team_create' %}"
                     class="btn btn-light text-primary fw-semibold d-flex align-items-center">
@@ -56,7 +56,7 @@
                         </small>
                     </div>
                 </div>
-                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role %}
+                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{% url 'users:team_edit' team.pk %}"
                        class="btn btn-sm btn-light text-primary d-flex align-items-center">
