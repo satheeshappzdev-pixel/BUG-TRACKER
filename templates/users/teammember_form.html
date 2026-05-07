@@ -102,35 +102,6 @@
                 {% endif %}
 
 
-
-                {% if form.password %}
-                <div class="mb-3">
-                    <label class="form-label text-white fw-bold" for="{{ form.password.id_for_label }}">Password</label>
-                    {{ form.password }}
-                    {% if form.password.errors %}
-                    <div class="text-danger small mt-1">
-                        {% for error in form.password.errors %}{{ error }}{% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-
-
-                {% if form.confirm_password %}
-                <div class="mb-3">
-                    <label class="form-label text-white fw-bold" for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
-                    {{ form.confirm_password }}
-                    {% if form.confirm_password.errors %}
-                    <div class="text-danger small mt-1">
-                        {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-white fw-bold" for="{{ form.team.id_for_label }}">Team</label>
@@ -203,6 +174,35 @@
                     {% endif %}
                 </div>
 
+
+                <hr class="text-white opacity-50">
+                {% if form.password %}
+                <div class="mb-3">
+                    <label class="form-label text-white fw-bold" for="{{ form.password.id_for_label }}">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.password.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+
+
+                {% if form.confirm_password %}
+                <div class="mb-3">
+                    <label class="form-label text-white fw-bold" for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
+                    {{ form.confirm_password }}
+                    {% if form.confirm_password.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <hr class="text-white opacity-50">
 
 
                 <div class="d-flex gap-2">
