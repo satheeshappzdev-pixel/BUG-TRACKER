@@ -17,6 +17,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.db.models import Q, Count
 from issues.models import Project, Issue, IssueRemarkLog
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import HttpResponse
+from django.views.generic import View
+import sqlite3
+from io import BytesIO
+import os
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -138,3 +144,26 @@ class TeamMemberDeleteView(LoginRequiredMixin, DeleteView):
     model = TeamMember
     template_name = 'users/teammember_confirm_delete.html'
     success_url = reverse_lazy('users:teammember_list')
+
+
+
+class DownloadDBView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+    def get(self, request):
+        db_path = 'db.sqlite3'
+        if not os.path.exists(db_path):
+            return HttpResponse('DB not found', status=404)
+        
+        # Non-blocking backup: WAL mode ensures reads don't lock writes
+        buffer = BytesIO()
+        conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)  # Read-only, no locks
+        try:
+            backup = conn.backup(buffer)
+            buffer.seek(0)
+            response = HttpResponse(buffer.read(), content_type='application/x-sqlite3')
+            response['Content-Disposition'] = 'attachment; filename="db.sqlite3"'
+            return response
+        finally:
+            conn.close()

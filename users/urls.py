@@ -3,6 +3,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from .views import (
     DashboardView,
+    DownloadDBView,
     TeamListView,
     TeamCreateView,
     TeamUpdateView,
@@ -32,6 +33,7 @@ urlpatterns = [
     path('teams/members/create/', TeamMemberCreateView.as_view(), name='teammember_create'),
     path('teams/members/<int:pk>/edit/', TeamMemberUpdateView.as_view(), name='teammember_edit'),
     path('teams/members/<int:pk>/delete/', TeamMemberDeleteView.as_view(), name='teammember_delete'),
+    path('download-db/', DownloadDBView.as_view(), name='download_db'),
 
     path(
         'logout/',
