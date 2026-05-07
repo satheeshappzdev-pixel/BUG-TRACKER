@@ -20,7 +20,7 @@ urlpatterns = [
     path('', auth_views.LoginView.as_view(
         template_name='registration/login.html',
         redirect_authenticated_user=True,
-        next_page='/dashboard/'  
+        next_page='/dashboard/'
     ), name='login'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
 
