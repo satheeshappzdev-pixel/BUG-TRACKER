@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-fjfw&r^h^kc1mrt)rq89=^bvaz%bjs)$wvl!6h3x=5_+guv5$c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG') 
 
 ALLOWED_HOSTS = ['*']
 
@@ -151,3 +151,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://bug-tracker-z4mi.onrender.com',
     'https://bug-tracker-z4mi.onrender.com',  # Repeat for safety if needed
 ]
+
+handler404 = 'bugtracker.views.handler404'
+
