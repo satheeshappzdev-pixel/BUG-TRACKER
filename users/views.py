@@ -21,7 +21,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse
 from django.views.generic import View
 import sqlite3
-from io import BytesIO
 import os
 
 
@@ -146,7 +145,6 @@ class TeamMemberDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('users:teammember_list')
 
 
-
 class DownloadDBView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.is_superuser
@@ -156,14 +154,19 @@ class DownloadDBView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not os.path.exists(db_path):
             return HttpResponse('DB not found', status=404)
         
-        # Non-blocking backup: WAL mode ensures reads don't lock writes
-        buffer = BytesIO()
-        conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)  # Read-only, no locks
+        # Fix: Backup to temp file, then read (non-blocking, safe)
+        temp_path = '/tmp/db_backup.sqlite3'
+        conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
         try:
-            backup = conn.backup(buffer)
-            buffer.seek(0)
-            response = HttpResponse(buffer.read(), content_type='application/x-sqlite3')
-            response['Content-Disposition'] = 'attachment; filename="db.sqlite3"'
-            return response
+            backup_conn = sqlite3.connect(temp_path)
+            conn.backup(backup_conn)
+            backup_conn.close()
+            
+            with open(temp_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/x-sqlite3')
+                response['Content-Disposition'] = 'attachment; filename="db.sqlite3"'
+                return response
         finally:
             conn.close()
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
