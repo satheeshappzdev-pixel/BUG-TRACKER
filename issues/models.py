@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from cloudinary.models import CloudinaryField
 
 from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
 
@@ -101,10 +102,10 @@ class Issue(models.Model):
     remarks = models.TextField(blank=True)
     qa_note = models.TextField(blank=True)
 
-    image_1 = models.ImageField(upload_to='issues/', null=True, blank=True)
-    image_2 = models.ImageField(upload_to='issues/', null=True, blank=True)
-    image_3 = models.ImageField(upload_to='issues/', null=True, blank=True)
-    image_4 = models.ImageField(upload_to='issues/', null=True, blank=True)
+    image_1 = CloudinaryField('image', null=True, blank=True)
+    image_2 = CloudinaryField('image', null=True, blank=True)
+    image_3 = CloudinaryField('image', null=True, blank=True)
+    image_4 = CloudinaryField('image', null=True, blank=True)
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
