@@ -146,3 +146,8 @@ CLOUDINARY_STORAGE = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://bug-tracker-z4mi.onrender.com',
+    'https://bug-tracker-z4mi.onrender.com',  # Repeat for safety if needed
+]
