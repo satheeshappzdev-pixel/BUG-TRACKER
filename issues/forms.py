@@ -8,6 +8,12 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class ProjectForm(forms.ModelForm):
+    owner = UserModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+    )
+
     class Meta:
         model = Project
         fields = [

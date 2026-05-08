@@ -13,7 +13,7 @@
             <p class="text-white-50 mb-0">Manage your developers and assignments.</p>
         </div>
     </div>
-    {% if request.user.team_member and request.user.team_member.has_management_role %}
+    {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
         <div class="col-auto d-flex align-items-center">
             <a href="{% url 'users:teammember_create' %}"
             class="btn btn-light text-primary fw-semibold d-flex align-items-center">
