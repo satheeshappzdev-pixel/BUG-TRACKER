@@ -61,7 +61,6 @@ class IssueListView(LoginRequiredMixin, ListView):
     template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
 
-
     def get_queryset(self):
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').all()
         search = self.request.GET.get('q')
@@ -89,16 +88,19 @@ class IssueListView(LoginRequiredMixin, ListView):
         if priority:
             qs = qs.filter(priority=priority)
 
+        # ?issue_type=task / bug / ...
+        issue_type = self.request.GET.get('issue_type')
+        if issue_type:
+            qs = qs.filter(issue_type=issue_type)
+
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
         return qs
-
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search'] = self.request.GET.get('q')
         return context
-
 
 class IssueDetailView(LoginRequiredMixin, DetailView):
     model = Issue

@@ -62,8 +62,12 @@
                                    class="text-decoration-none text-white-50">
                                     {{ issue.project.name }}
                                 </a>
+                                <span class="badge bg-primary mx-3 me-2">
+                                    {{ issue.get_issue_type_display }}
+                                </span>
                             </div>
                             <div class="small text-white-50">
+
                                 <span class="badge bg-secondary me-1">
                                     {{ issue.get_priority_display }}
                                 </span>

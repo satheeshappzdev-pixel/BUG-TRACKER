@@ -8,7 +8,7 @@ from django.views.generic import (
     DeleteView,
 )
 
-from issues.choices import IssuePriorityChoices, IssueStatusChoices
+from issues.choices import IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
 from issues.models import Issue, IssueRemarkLog, Project
 
 from .forms import TeamForm, TeamMemberForm
@@ -87,6 +87,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # expose enums so template can use their .value
         context['IssueStatusChoices'] = IssueStatusChoices
         context['IssuePriorityChoices'] = IssuePriorityChoices
+        context['IssueTypeChoices'] = IssueTypeChoices
 
         return context
 

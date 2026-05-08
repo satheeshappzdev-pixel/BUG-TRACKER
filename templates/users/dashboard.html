@@ -81,53 +81,108 @@
     </style>
 
     <div class="row g-4 mb-5">
-        <!-- 1: Active Bugs - all open issues -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}"
-            class="text-decoration-none">
-                <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
-                    <span class="material-icons fs-1 mb-2">bug_report</span>
-                    <h3 class="fw-bold mb-1">{{ active_bugs }}</h3>
-                    <p class="mb-0 opacity-75">Active Bugs</p>
-                </div>
-            </a>
-        </div>
+        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+            {# MANAGEMENT VIEW: show all metrics as they are #}
 
-        <!-- 2: Active Tasks - open issues that have an assignee -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.IN_PROGRESS.value }}&assigned=1"
-            class="text-decoration-none">
-                <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
-                    <span class="material-icons fs-1 mb-2">task_alt</span>
-                    <h3 class="fw-bold mb-1">{{ active_tasks }}</h3>
-                    <p class="mb-0 opacity-75">Progressing Tasks</p>
-                </div>
-            </a>
-        </div>
+            <!-- 1: Active Bugs - all open issues -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">bug_report</span>
+                        <h3 class="fw-bold mb-1">{{ active_bugs }}</h3>
+                        <p class="mb-0 opacity-75">Active Bugs</p>
+                    </div>
+                </a>
+            </div>
 
-        <!-- 3: High Priority Bugs - open & high priority -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&priority={{ IssuePriorityChoices.HIGH.value }}"
-            class="text-decoration-none">
-                <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
-                    <span class="material-icons fs-1 mb-2">priority_high</span>
-                    <h3 class="fw-bold mb-1">{{ high_priority_bugs }}</h3>
-                    <p class="mb-0 opacity-75">High Priority Bugs</p>
-                </div>
-            </a>
-        </div>
+            <!-- 2: Active Tasks - in progress tasks with assignee -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.IN_PROGRESS.value }}&assigned=1&issue_type={{ IssueTypeChoices.TASK.value }}"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">task_alt</span>
+                        <h3 class="fw-bold mb-1">{{ active_tasks }}</h3>
+                        <p class="mb-0 opacity-75">Progressing Tasks</p>
+                    </div>
+                </a>
+            </div>
 
-        <!-- 4: My Task - Issue - open issues assigned to current user -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <a href="{% url 'issues:my_issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}"
-            class="text-decoration-none">
-                <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
-                    <span class="material-icons fs-1 mb-2">assignment_ind</span>
-                    <h3 class="fw-bold mb-1">{{ my_open_issues }}</h3>
-                    <p class="mb-0 opacity-75">My Tasks / Issues</p>
-                </div>
-            </a>
-        </div>
+            <!-- 3: High Priority Bugs - open & high priority -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&priority={{ IssuePriorityChoices.HIGH.value }}"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">priority_high</span>
+                        <h3 class="fw-bold mb-1">{{ high_priority_bugs }}</h3>
+                        <p class="mb-0 opacity-75">High Priority Bugs</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 4: My Task - Issue - open issues assigned to current user -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:my_issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">assignment_ind</span>
+                        <h3 class="fw-bold mb-1">{{ my_open_issues }}</h3>
+                        <p class="mb-0 opacity-75">My Tasks / Issues</p>
+                    </div>
+                </a>
+            </div>
+
+        {% else %}
+            {# DEVELOPER VIEW: use same cards but filter by assignee=request.user in links #}
+
+            <!-- 1: Active Bugs - open bugs assigned to me -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&assignee=me"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">bug_report</span>
+                        <h3 class="fw-bold mb-1">{{ active_bugs }}</h3>
+                        <p class="mb-0 opacity-75">My Active Bugs</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 2: Active Tasks - in progress tasks assigned to me -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.IN_PROGRESS.value }}&issue_type={{ IssueTypeChoices.TASK.value }}&assignee=me"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">task_alt</span>
+                        <h3 class="fw-bold mb-1">{{ active_tasks }}</h3>
+                        <p class="mb-0 opacity-75">My Progressing Tasks</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 3: High Priority Bugs - high priority bugs assigned to me -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&priority={{ IssuePriorityChoices.HIGH.value }}&assignee=me"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">priority_high</span>
+                        <h3 class="fw-bold mb-1">{{ high_priority_bugs }}</h3>
+                        <p class="mb-0 opacity-75">My High Priority Bugs</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 4: My Task - Issue - open issues assigned to current user (same as before) -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <a href="{% url 'issues:my_issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}"
+                class="text-decoration-none">
+                    <div class="metric-card glass-card dashboard-card p-4 h-100 text-center text-white">
+                        <span class="material-icons fs-1 mb-2">assignment_ind</span>
+                        <h3 class="fw-bold mb-1">{{ my_open_issues }}</h3>
+                        <p class="mb-0 opacity-75">My Tasks / Issues</p>
+                    </div>
+                </a>
+            </div>
+        {% endif %}
     </div>
     <div class="row g-3 mb-5">
         {% for row in issue_status_stats %}
