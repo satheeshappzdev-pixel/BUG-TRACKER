@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
 
+    'apscheduler',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -154,3 +156,5 @@ CSRF_TRUSTED_ORIGINS = [
 
 handler404 = 'bugtracker.views.handler404'
 
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+APSCHEDULER_TIMEZONE = 'Asia/Kolkata'
