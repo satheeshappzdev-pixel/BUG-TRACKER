@@ -15,9 +15,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Django / SQLite databases
-*.db
-*.sqlite3
+# # Django / SQLite databases
+# *.db
+# *.sqlite3
 
 # Logs
 *.log

@@ -13,12 +13,13 @@ class IssuePriorityChoices(models.TextChoices):
 
 class IssueStatusChoices(models.TextChoices):
     OPEN = 'open', 'Open'
-    IN_PROGRESS = 'in_progress', 'In Progress'
-    HOLD = 'hold', 'Hold' 
+    DEV_IN_PROGRESS = 'dev_in_progress', 'Dev In Progress'
+    READY_FOR_QA = 'ready_for_qa', 'Ready for QA'
+    QA_IN_PROGRESS = 'qa_in_progress', 'QA In Progress'
+    IN_REVIEW = 'in_review', 'In Review'
+    HOLD = 'hold', 'Hold'
     SCOPE_REVIEW = 'scope_review', 'Scope Review'
     REJECTED = 'rejected', 'Rejected'
-    IN_REVIEW = 'in_review', 'In Review'
-    QA = 'qa', 'QA'
     DONE = 'done', 'Done'
     CLOSED = 'closed', 'Closed'
     REOPEN = 'reopen', 'Reopen'

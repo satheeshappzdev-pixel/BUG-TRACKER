@@ -22,6 +22,7 @@ from django.http import HttpResponse
 from django.views.generic import View
 import sqlite3
 import os
+from django.db import models
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -47,8 +48,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             status=IssueStatusChoices.OPEN,
         ).count()
 
+        # Progressing tasks = Dev In Progress OR QA In Progress with assignee set
         context['active_tasks'] = issues_qs.filter(
-            status=IssueStatusChoices.OPEN,
+            models.Q(status=IssueStatusChoices.DEV_IN_PROGRESS) |
+            models.Q(status=IssueStatusChoices.QA_IN_PROGRESS),
             assignee__isnull=False,
         ).count()
 
@@ -86,6 +89,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['IssuePriorityChoices'] = IssuePriorityChoices
 
         return context
+
 
 class TeamListView(LoginRequiredMixin, ListView):
     model = Team
