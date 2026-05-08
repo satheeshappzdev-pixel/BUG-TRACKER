@@ -134,11 +134,23 @@
             <div class="col-12 col-sm-6 col-lg-3">
                 <a href="{% url 'issues:issue_list' %}?status={{ row.value }}" class="text-decoration-none">
                     <div class="glass-card dashboard-card p-3 h-100 text-white">
-                        <div>
-                            <div class="text-white-50 small mb-1">Status</div>
-                            <h5 class="fw-bold mb-1">{{ row.label }}</h5>
+                        <div class="row align-items-center">
+                            
+                            <div class="col-8">
+                                <div class="text-white-50 small mb-1">Status</div>
+                                <h5 class="fw-bold mb-1" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ row.label }}
+                                </h5>
+                                <div class="text-white-50 small mt-2">{{ row.count }} issues</div>
+                            </div>
+
+                            <div class="col-4 text-end">
+                                <div style="font-size: 2.2rem; line-height: 1; font-weight: 700;">
+                                    {{ row.count }}
+                                </div>
+                            </div>
+
                         </div>
-                        <div class="text-white-50 small mt-2">{{ row.count }} issues</div>
                     </div>
                 </a>
             </div>
