@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-
 from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
 
 from django.contrib.auth import get_user_model
@@ -59,14 +58,19 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
         return redirect('issues:project_detail', pk=project.pk)
 
 
+# Ensure you import your models and choices here
+# from .models import Issue, Project, IssueStatusChoices, IssuePriorityChoices, IssueEnvironmentChoices, IssueTypeChoices
+
 class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
 
     def get_queryset(self):
+        # Start with optimized select_related
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').all()
 
+        # 1. Search filter
         search = self.request.GET.get('q')
         if search:
             qs = qs.filter(
@@ -77,42 +81,42 @@ class IssueListView(LoginRequiredMixin, ListView):
                 | Q(reporter__username__icontains=search)
             )
 
+        # 2. Basic status and priority filters
         status = self.request.GET.get('status')
         if status:
             qs = qs.filter(status=status)
 
-        # from dashboard cards:
-        # ?assigned=1  -> only issues that have an assignee
-        assigned = self.request.GET.get('assigned')
-        if assigned == '1':
-            qs = qs.filter(assignee__isnull=False)
-
-        # ?priority=high / medium / low / critical
         priority = self.request.GET.get('priority')
         if priority:
             qs = qs.filter(priority=priority)
 
-        # ?issue_type=task / bug / ...
         issue_type = self.request.GET.get('issue_type')
         if issue_type:
             qs = qs.filter(issue_type=issue_type)
 
-        # NEW: project filter
+        # 3. Project and Environment filters
         project_id = self.request.GET.get('project')
         if project_id:
             qs = qs.filter(project_id=project_id)
 
-        # NEW: environment filter
         environment = self.request.GET.get('environment')
         if environment:
             qs = qs.filter(environment=environment)
 
-        # NEW: assignee filter (from filter section)
+        # 4. FIXED: Assignee filter (Handles the "me" keyword from Dashboard)
         assignee_id = self.request.GET.get('assignee')
         if assignee_id:
-            qs = qs.filter(assignee_id=assignee_id)
+            if assignee_id == 'me':
+                qs = qs.filter(assignee=self.request.user)
+            else:
+                qs = qs.filter(assignee_id=assignee_id)
 
-        # NEW: related issue filters
+        # 5. Logic for dashboard "Assigned" card
+        assigned_only = self.request.GET.get('assigned')
+        if assigned_only == '1':
+            qs = qs.filter(assignee__isnull=False)
+
+        # 6. Related issue filters
         related_filter = self.request.GET.get('related_filter')
         if related_filter == 'has':
             qs = qs.filter(related_issue__isnull=False)
@@ -123,27 +127,32 @@ class IssueListView(LoginRequiredMixin, ListView):
         if related_issue_id:
             qs = qs.filter(related_issue_id=related_issue_id)
 
+        # 7. Add permission check attribute to each object
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
+            
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Persist search and project state in template
         context['search'] = self.request.GET.get('q')
+        context['selected_project_id'] = self.request.GET.get('project')
 
-        # NEW: data for filters
+        # Dropdown data for filters
         context['projects'] = Project.objects.all()
         context['assignees'] = (
             get_user_model()
             .objects.filter(assigned_issues__isnull=False)
             .distinct()
         )
-        # only issues that can be used as related tasks (TASK type)
+        # Related tasks lookup
         context['related_issues'] = Issue.objects.filter(
             issue_type=IssueTypeChoices.TASK
         ).order_by('title')
 
-        # expose choices for template filters
+        # Expose Choice Enums to Template
         context['IssueStatusChoices'] = IssueStatusChoices
         context['IssuePriorityChoices'] = IssuePriorityChoices
         context['IssueEnvironmentChoices'] = IssueEnvironmentChoices
