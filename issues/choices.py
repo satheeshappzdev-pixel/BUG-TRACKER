@@ -1,5 +1,8 @@
 from django.db import models
+from django import forms
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class IssuePriorityChoices(models.TextChoices):
     LOW = 'low', 'Low'
@@ -36,3 +39,7 @@ class IssueTypeChoices(models.TextChoices):
     BUG = "bug", "Bug"
     TASK = "task", "Task"
     ENHANCEMENT = "enhancement", "Enhancement"
+
+class UserModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.get_full_name() or obj.username

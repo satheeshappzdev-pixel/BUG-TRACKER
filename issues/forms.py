@@ -1,8 +1,11 @@
 from django import forms
 
 from .models import Project, Issue, IssueRemarkLog
-from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
+from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, UserModelChoiceField
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -42,7 +45,11 @@ class IssueForm(forms.ModelForm):
         choices=IssueTypeChoices.choices,
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
-
+    assignee = UserModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+    )
 
     class Meta:
         model = Issue
