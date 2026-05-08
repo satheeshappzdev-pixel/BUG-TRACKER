@@ -5,6 +5,9 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
+from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
+
+from django.contrib.auth import get_user_model
 from .forms import ProjectForm, IssueForm, IssueRemarkLogForm
 from .models import IssueRemarkLog, Project, Issue
 
@@ -63,6 +66,7 @@ class IssueListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').all()
+
         search = self.request.GET.get('q')
         if search:
             qs = qs.filter(
@@ -93,6 +97,32 @@ class IssueListView(LoginRequiredMixin, ListView):
         if issue_type:
             qs = qs.filter(issue_type=issue_type)
 
+        # NEW: project filter
+        project_id = self.request.GET.get('project')
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+
+        # NEW: environment filter
+        environment = self.request.GET.get('environment')
+        if environment:
+            qs = qs.filter(environment=environment)
+
+        # NEW: assignee filter (from filter section)
+        assignee_id = self.request.GET.get('assignee')
+        if assignee_id:
+            qs = qs.filter(assignee_id=assignee_id)
+
+        # NEW: related issue filters
+        related_filter = self.request.GET.get('related_filter')
+        if related_filter == 'has':
+            qs = qs.filter(related_issue__isnull=False)
+        elif related_filter == 'none':
+            qs = qs.filter(related_issue__isnull=True)
+
+        related_issue_id = self.request.GET.get('related_issue')
+        if related_issue_id:
+            qs = qs.filter(related_issue_id=related_issue_id)
+
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
         return qs
@@ -100,6 +130,25 @@ class IssueListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search'] = self.request.GET.get('q')
+
+        # NEW: data for filters
+        context['projects'] = Project.objects.all()
+        context['assignees'] = (
+            get_user_model()
+            .objects.filter(assigned_issues__isnull=False)
+            .distinct()
+        )
+        # only issues that can be used as related tasks (TASK type)
+        context['related_issues'] = Issue.objects.filter(
+            issue_type=IssueTypeChoices.TASK
+        ).order_by('title')
+
+        # expose choices for template filters
+        context['IssueStatusChoices'] = IssueStatusChoices
+        context['IssuePriorityChoices'] = IssuePriorityChoices
+        context['IssueEnvironmentChoices'] = IssueEnvironmentChoices
+        context['IssueTypeChoices'] = IssueTypeChoices
+
         return context
 
 class IssueDetailView(LoginRequiredMixin, DetailView):

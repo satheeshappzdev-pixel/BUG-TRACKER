@@ -43,7 +43,6 @@ class Project(models.Model):
             return f'{self.code} - {self.name}'
         return self.name
 
-
 class Issue(models.Model):
     project = models.ForeignKey(
         Project,
@@ -97,6 +96,17 @@ class Issue(models.Model):
         null=True,
         blank=True,
         help_text='Estimated effort in hours',
+    )
+
+    # NEW: optional self‑reference for related / parent issue
+    related_issue = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='related_issues',
+        help_text='Optional related or parent issue',
+        limit_choices_to={'issue_type': IssueTypeChoices.TASK},  # optional extra safety
     )
 
     remarks = models.TextField(blank=True)

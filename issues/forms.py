@@ -70,6 +70,7 @@ class IssueForm(forms.ModelForm):
             'environment',
             'status',
             'time_estimate_hours',
+            'related_issue',
             'remarks',
             'qa_note',
             'image_1',
@@ -84,6 +85,7 @@ class IssueForm(forms.ModelForm):
             'reporter': forms.Select(attrs={'class': 'form-select'}),
             'assignee': forms.Select(attrs={'class': 'form-select'}),
             'time_estimate_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25'}),
+            'related_issue': forms.Select(attrs={'class': 'form-select'}),
             'remarks': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'qa_note': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'image_1': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -92,6 +94,12 @@ class IssueForm(forms.ModelForm):
             'image_4': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'related_issue' in self.fields:
+            self.fields['related_issue'].queryset = Issue.objects.filter(
+                issue_type=IssueTypeChoices.TASK
+            )
 
 class IssueRemarkLogForm(forms.ModelForm):
     class Meta:
