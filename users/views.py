@@ -31,9 +31,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project_id = self.request.GET.get('project')
+        source = self.request.GET.get('source', 'ALL')
 
         context['projects'] = Project.objects.all()
         context['selected_project_id'] = project_id
+        context['selected_source'] = source
 
         if project_id:
             issues_qs = Issue.objects.filter(project_id=project_id)
@@ -43,6 +45,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         else:
             issues_qs = Issue.objects.all()
             recent_activities_qs = IssueRemarkLog.objects.select_related('issue', 'author').all()
+
+        if source == 'MINE':
+            issues_qs = issues_qs.filter(assignee=self.request.user)
+            recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user)
 
         context['active_bugs'] = issues_qs.filter(
             status=IssueStatusChoices.OPEN,
