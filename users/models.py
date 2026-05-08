@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 
 
-from issues.choices import TeamMemberRoleChoices
+from users.choices import TeamMemberRoleChoices
 
 
 
