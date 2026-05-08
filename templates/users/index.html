@@ -80,10 +80,12 @@
                    href="{% url 'issues:my_issue_list' %}">
                     <span class="material-icons me-2">task</span>My Tasks
                 </a>
+                {% if request.user.is_superuser %}
                 <a class="nav-link fs-5 py-2 {% block nav_download_db_active %}{% endblock %}"
                 href="{% url 'users:download_db' %}">
                     <span class="material-icons me-2">download</span>Download DB
                 </a>
+                {% endif %}
             </nav>
             <button type="button"
                     class="btn btn-light d-flex align-items-center mt-5 fs-5 py-2"
