@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     MyIssueListView, ProjectListView, ProjectDetailView, ProjectCreateView, ProjectUpdateView,
-    IssueListView, IssueDetailView, IssueCreateView, IssueUpdateView, IssueAddRemarkView,
+    IssueListView, IssueDetailView, IssueCreateView, IssueUpdateView, IssueAddRemarkView, TagCreateView, TagDeleteView, TagListView, TagUpdateView,
 )
 
 app_name = 'issues'
@@ -17,4 +17,9 @@ urlpatterns = [
     path('issues/<int:pk>/edit/', IssueUpdateView.as_view(), name='issue_update'),
     path('issues/<int:pk>/remarks/add/', IssueAddRemarkView.as_view(), name='issue_add_remark'),
     path('my-tasks/', MyIssueListView.as_view(), name='my_issue_list'),
+
+    path('tags/', TagListView.as_view(), name='tag_list'),
+    path('tags/create/', TagCreateView.as_view(), name='tag_create'),
+    path('tags/<int:pk>/edit/', TagUpdateView.as_view(), name='tag_edit'),
+    path('tags/<int:pk>/delete/', TagDeleteView.as_view(), name='tag_delete'),
 ]

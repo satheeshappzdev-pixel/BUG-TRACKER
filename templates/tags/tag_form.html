@@ -1,0 +1,78 @@
+{% extends "users/index.html" %}
+
+{% block title %}{{ title }} - Tags{% endblock %}
+
+{% block nav_tags_active %}active{% endblock %}
+
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-5">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">label</span>
+        <div>
+            <h1 class="text-white fw-bold mb-1">{{ title }}</h1>
+            <p class="text-white-50 mb-0">Manage tags used to classify issues and projects.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3 d-flex align-items-start">
+            {% with field=form.name %}
+                <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 140px;">
+                    {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                <div class="flex-grow-1">
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endwith %}
+        </div>
+
+        <div class="mb-3 d-flex align-items-start">
+            {% with field=form.slug %}
+                <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 140px;">
+                    {{ field.label }}
+                </label>
+                <div class="flex-grow-1">
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endwith %}
+        </div>
+
+        <div class="mb-3 d-flex align-items-center">
+            {% with field=form.is_active %}
+                <label class="form-label text-white me-3" for="{{ field.id_for_label }}" style="min-width: 140px;">
+                    {{ field.label }}
+                </label>
+                <div>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endwith %}
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <a href="{% url 'issues:tag_list' %}" class="btn btn-secondary me-2">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                Save
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% endblock %}

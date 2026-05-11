@@ -56,6 +56,10 @@ class Issue(models.Model):
         choices=IssueTypeChoices.choices,
         default=IssueTypeChoices.TASK,
     )
+    drive_url = models.CharField(max_length=500,
+        null=True,
+        blank=True
+        )
 
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -71,6 +75,7 @@ class Issue(models.Model):
         blank=True,
         related_name='assigned_issues',
     )
+    
 
     priority = models.CharField(
         max_length=20,
@@ -108,7 +113,12 @@ class Issue(models.Model):
         help_text='Optional related or parent issue',
         limit_choices_to={'issue_type': IssueTypeChoices.TASK},  # optional extra safety
     )
-
+    tags = models.ManyToManyField(
+        'Tag',
+        related_name='issues',
+        blank=True,
+        help_text='Tags used to classify this issue',
+    )
     remarks = models.TextField(blank=True)
     qa_note = models.TextField(blank=True)
 
@@ -177,3 +187,16 @@ class IssueRemarkLog(models.Model):
 
     def __str__(self):
         return f'Log #{self.id} for Issue #{self.issue_id}'
+    
+
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name

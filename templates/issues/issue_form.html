@@ -110,25 +110,46 @@
                     </div>
                 </div>
             </div>
-
             <div class="glass-card p-4 mb-4">
-                {# Description #}
                 <h5 class="text-white mb-3">Description</h5>
-                <div class="mb-3">
+
+                <!-- Description row -->
+                <div class="mb-3 d-flex align-items-start">
                     {% with field=form.description %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            {{ field.label }}
+                        <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 150px;">
+                            {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                         </label>
-                        {{ field }}
-                        {% if field.help_text %}
-                            <div class="form-text text-white-50">{{ field.help_text }}</div>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
+                        <div class="flex-grow-1">
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text text-white-50">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endwith %}
+                </div>
+
+                <!-- Drive URL row -->
+                <div class="mb-3 d-flex align-items-start">
+                    {% with field=form.drive_url %}
+                        <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 150px;">
+                            {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        <div class="flex-grow-1">
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text text-white-50">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     {% endwith %}
                 </div>
             </div>
+
 
             <div class="glass-card p-4 mb-4">
                 {# Remarks / QA note #}
@@ -262,7 +283,6 @@
                     {% endwith %}
                 </div>
 
-                {# NEW: related_issue #}
                 <div class="mb-3">
                     {% with field=form.related_issue %}
                         <label class="form-label text-white" for="{{ field.id_for_label }}">
@@ -274,8 +294,98 @@
                         {% endfor %}
                     {% endwith %}
                 </div>
-                {# END NEW #}
+                {# NEW: tags (multi-select dropdown) #}
+                {# Keep your Django field for form submission #}
+                <div class="mb-3">
+                    {% with field=form.tags %}
+                        <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            Tags (optional)
+                        </label>
 
+                        <div class="react-tag-select">
+                            {{ field }}  {# select[multiple] will be hidden by CSS #}
+
+                            <div class="react-tag-select-display">
+                                {% for opt in field.field.choices %}
+                                    {% if opt.0 %}
+                                        <label class="react-tag-pill">
+                                            <input type="checkbox"
+                                                name="{{ field.name }}"
+                                                value="{{ opt.0 }}"
+                                                {% if opt.0|stringformat:"s" in field.value|stringformat:"s" %}checked{% endif %}>
+                                            <span>{{ opt.1 }}</span>
+                                        </label>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+
+<style>
+    /* Hide the original multiple select visually but keep it in the DOM */
+    .react-tag-select select[multiple] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        height: 0;
+        width: 0;
+    }
+
+    .react-tag-select-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        padding: 0.35rem;
+        border-radius: 0.5rem;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .react-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.15);
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        color: #e5e7eb;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .react-tag-pill input {
+        display: none;
+    }
+
+    .react-tag-pill span {
+        pointer-events: none;
+    }
+
+    .react-tag-pill:hover {
+        background: rgba(59, 130, 246, 0.25);
+        border-color: rgba(59, 130, 246, 0.7);
+        transform: translateY(-1px);
+    }
+
+    .react-tag-pill input:checked + span,
+    .react-tag-pill input:checked ~ span {
+        background: transparent;
+        color: #0ea5e9;
+        font-weight: 600;
+    }
+
+    .react-tag-pill input:checked + span::before,
+    .react-tag-pill input:checked ~ span::before {
+        content: '✓ ';
+        font-weight: 700;
+    }
+</style>
                 <div class="mb-3">
                     {% with field=form.time_estimate_hours %}
                         <label class="form-label text-white" for="{{ field.id_for_label }}">

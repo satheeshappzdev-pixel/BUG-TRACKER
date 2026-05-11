@@ -1,0 +1,92 @@
+{% extends "users/index.html" %}
+
+{% block title %}Tags - Bug Tracker{% endblock %}
+
+{% block nav_tags_active %}active{% endblock %}
+
+{% block dashboard_content %}
+{% block page_header %}
+<div class="row mb-5">
+    <div class="col d-flex align-items-center">
+        <span class="material-icons text-white fs-1 me-2">label</span>
+        <div>
+            <h1 class="text-white fw-bold mb-1">Tags</h1>
+            <p class="text-white-50 mb-0">Manage tags used to classify issues and projects.</p>
+        </div>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <a href="{% url 'issues:tag_create' %}"
+            class="btn btn-light text-primary fw-semibold d-flex align-items-center">
+            <span class="material-icons me-1">add</span>
+            New Tag
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    {% for tag in tags %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="glass-card p-4 h-100">
+                <div class="d-flex align-items-start mb-2">
+                    <div class="me-2">
+                        <span class="material-icons text-white">label</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold text-white mb-1">
+                            {{ tag.name }}
+                        </h5>
+                        {% if tag.slug %}
+                            <p class="text-white-50 mb-1 small">Slug: {{ tag.slug }}</p>
+                        {% endif %}
+                        <small class="text-white-50 d-flex align-items-center mb-2">
+                            <span class="material-icons small me-1">schedule</span>
+                            Created: {{ tag.created_at|date:"Y-m-d H:i" }}
+                        </small>
+                        <small class="text-white-50 d-flex align-items-center">
+                            <span class="material-icons small me-1">visibility</span>
+                            Status:
+                            {% if tag.is_active %}
+                                &nbsp;<span class="badge bg-success ms-1">Active</span>
+                            {% else %}
+                                &nbsp;<span class="badge bg-secondary ms-1">Inactive</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+                        <a href="{% url 'issues:edit' tag.pk %}"
+                           class="btn btn-sm btn-outline-light text-white d-flex align-items-center">
+                            <span class="material-icons me-1" style="font-size:16px;">edit</span>
+                            Edit
+                        </a>
+                        <a href="{% url 'issues:delete' tag.pk %}"
+                           class="btn btn-sm btn-outline-danger text-danger bg-transparent d-flex align-items-center">
+                            <span class="material-icons me-1" style="font-size:16px;">delete</span>
+                            Delete
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="glass-card text-center py-5">
+                <span class="material-icons fs-1 text-white-50 mb-3">label_off</span>
+                <h4 class="text-white-50 mb-1">No tags found</h4>
+                <p class="text-white-50 mb-3">Create your first tag to start classifying issues.</p>
+                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+                    <a href="{% url 'issues:create' %}"
+                       class="btn btn-light text-primary fw-semibold d-inline-flex align-items-center">
+                        <span class="material-icons me-1">add</span>
+                        New Tag
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+{% endblock %}

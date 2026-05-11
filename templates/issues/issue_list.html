@@ -1,6 +1,8 @@
 {% extends "users/index.html" %}
 
+
 {% block title %}Issues | Bug Tracker{% endblock %}
+
 
 {% block nav_issues_active %}active{% endblock %}
 {% block dashboard_content %}
@@ -15,6 +17,7 @@
     </div>
 </div>
 {% endblock %}
+
 
 {% block content %}
 {# Search card #}
@@ -46,9 +49,11 @@
         {# preserve search query when filtering #}
         <input type="hidden" name="q" value="{{ request.GET.q }}">
 
+
         <div class="col-12">
             <h2 class="h6 mb-2">Filters</h2>
         </div>
+
 
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Project</label>
@@ -62,6 +67,7 @@
             </select>
         </div>
 
+
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Status</label>
             <select name="status" class="form-select form-select-sm filter-control">
@@ -73,6 +79,7 @@
                 {% endfor %}
             </select>
         </div>
+
 
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Priority</label>
@@ -86,6 +93,7 @@
             </select>
         </div>
 
+
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Environment</label>
             <select name="environment" class="form-select form-select-sm filter-control">
@@ -98,6 +106,7 @@
             </select>
         </div>
 
+
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Issue type</label>
             <select name="issue_type" class="form-select form-select-sm filter-control">
@@ -109,6 +118,7 @@
                 {% endfor %}
             </select>
         </div>
+
 
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Assignee</label>
@@ -131,6 +141,7 @@
             </select>
         </div>
 
+
         <div class="col-md-2 col-sm-6">
             <label class="form-label text-white-50 small mb-1">Specific related issue</label>
             <select name="related_issue" class="form-select form-select-sm filter-control">
@@ -142,6 +153,7 @@
                 {% endfor %}
             </select>
         </div>
+
 
         <div class="col-md-2 d-flex gap-2 justify-content-md-end justify-content-start mt-2 mt-md-0">
             <button type="submit"
@@ -158,6 +170,7 @@
     </form>
 </div>
 
+
 <style>
     .filter-control {
         background-color: rgba(15, 23, 42, 0.9);  /* dark slate to match glass theme */
@@ -169,14 +182,28 @@
         box-shadow: 0 0 0 0.1rem rgba(59, 130, 246, 0.6);
         border-color: rgba(59, 130, 246, 0.8);
     }
+    .issue-tag-pill {
+        background: rgba(148, 163, 184, 0.25);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        font-size: 0.7rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    .issue-tag-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.35rem 0.9rem rgba(0, 0, 0, 0.35);
+        background: rgba(59, 130, 246, 0.35);
+        border-color: rgba(59, 130, 246, 0.9);
+    }
 </style>
+
 
 
 {# Issues cards #}
 {% if issues %}
     <div class="row g-3">
         {% for issue in issues %}
-            {% if not request.GET.q or request.GET.q|lower in issue.title|lower %}
             <div class="col-12 col-md-6">
                 <div class="glass-card p-3 h-100 text-white">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -199,6 +226,7 @@
                             </div>
                             <div class="small text-white-50">
 
+
                                 <span class="badge bg-secondary me-1">
                                     {{ issue.get_priority_display }}
                                 </span>
@@ -215,6 +243,7 @@
                         </span>
                     </div>
 
+
                     <div class="small text-white-50 mb-1">
                         Key:
                         <span class="fw-semibold text-white">
@@ -224,6 +253,22 @@
                                 #{{ issue.pk }}
                             {% endif %}
                         </span>
+                    </div>
+                    <div class="small text-white-50 mb-1">
+                        Tags:
+                        {% if issue.tags.all %}
+                            <span>
+                                {% for tag in issue.tags.all %}
+                                    <span class="issue-tag-pill me-1">
+                                        {{ tag.name }}
+                                    </span>
+                                {% empty %}
+                                    <em>No tags</em>
+                                {% endfor %}
+                            </span>
+                        {% else %}
+                            <em>No tags</em>
+                        {% endif %}
                     </div>
                     <div class="small text-white-50 mb-1">
                         Assignee:
@@ -245,6 +290,7 @@
                         Updated: {{ issue.updated_at|date:"Y-m-d H:i" }}
                     </div>
 
+
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{% url 'issues:issue_detail' issue.pk %}"
                            class="btn btn-sm btn-light text-primary d-inline-flex align-items-center">
@@ -261,7 +307,6 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
         {% endfor %}
     </div>
 {% else %}

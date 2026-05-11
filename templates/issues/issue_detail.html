@@ -79,17 +79,37 @@
                     Updated {{ issue.updated_at|date:"Y-m-d H:i" }}
                 </div>
             </div>
+            <style>
+                .drive-link-badge {
+                    transition: transform 0.15s ease, box-shadow 0.15s ease;
+                }
 
-
+                .drive-link-badge:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.35);
+                }
+            </style>
 
             {% if issue.description %}
                 <h2 class="h6 text-white">Description</h2>
                 <div class="my-3 p-3" style="color: white !important; background-color: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">{{ issue.description|linebreaks }}</div>
             {% endif %}
 
+            {% if issue.drive_url %}
+            <h2 class="h6 text-white">Drive Link</h2>
+            <a href="{{ issue.drive_url }}" target="_blank" rel="noopener noreferrer"
+            class="badge bg-primary text-dark text-decoration-none d-inline-flex align-items-center drive-link-badge">
+                <i class="bi bi-paperclip me-2"></i>
+                <span class="me-1">Drive link:</span>
+                <span class="text-truncate" style="max-width: 220px;">
+                    {{ issue.drive_url }}
+                </span>
+            </a>
+            {% endif %}
 
 
-            <div class="row g-2 mb-3">
+            <div class="row g-2 my-3">
+                <h2 class="h6 text-white">Attached Images</h2>
                 {% if issue.image_1 %}
                     <div class="col-6 col-md-3">
                         <a href="{{ issue.image_1.url }}" target="_blank">
@@ -311,6 +331,39 @@
                         <em>Not set</em>
                     {% endif %}
                 </dd>
+
+                <dt class="col-5">Tags</dt>
+                <dd class="col-7">
+                    {% if issue.tags.all %}
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for tag in issue.tags.all %}
+                                <span class="badge rounded-pill bg-secondary text-white issue-tag-pill">
+                                    {{ tag.name }}
+                                </span>
+                            {% empty %}
+                                <em>No tags</em>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <em>No tags</em>
+                    {% endif %}
+                </dd>
+
+                <style>
+                    .issue-tag-pill {
+                        background: rgba(148, 163, 184, 0.25);
+                        border: 1px solid rgba(148, 163, 184, 0.6);
+                        font-size: 0.75rem;
+                        padding: 0.15rem 0.6rem;
+                        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+                    }
+                    .issue-tag-pill:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 0.35rem 0.9rem rgba(0, 0, 0, 0.35);
+                        background: rgba(59, 130, 246, 0.35);
+                        border-color: rgba(59, 130, 246, 0.9);
+                    }
+                </style>
 
 
 

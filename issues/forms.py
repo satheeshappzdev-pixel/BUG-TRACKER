@@ -2,7 +2,7 @@ from django import forms
 
 from .models import Project, Issue, IssueRemarkLog
 from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, UserModelChoiceField
-
+from .models import Tag
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -63,6 +63,7 @@ class IssueForm(forms.ModelForm):
             'project',
             'title',
             'description',
+            'drive_url',
             'issue_type',
             'reporter',
             'assignee',
@@ -71,6 +72,7 @@ class IssueForm(forms.ModelForm):
             'status',
             'time_estimate_hours',
             'related_issue',
+            'tags',
             'remarks',
             'qa_note',
             'image_1',
@@ -82,10 +84,13 @@ class IssueForm(forms.ModelForm):
             'project': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'drive_url': forms.TextInput(attrs={'class': 'form-control'}),
+            'issue_type': forms.Textarea(attrs={'class': 'form-control'}),
             'reporter': forms.Select(attrs={'class': 'form-select'}),
             'assignee': forms.Select(attrs={'class': 'form-select'}),
             'time_estimate_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25'}),
             'related_issue': forms.Select(attrs={'class': 'form-select'}),
+            'tags': forms.SelectMultiple(attrs={"class": "form-select"}),
             'remarks': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'qa_note': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'image_1': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -117,4 +122,14 @@ class IssueRemarkLogForm(forms.ModelForm):
             'to_status': forms.Select(choices=IssueStatusChoices.choices, attrs={'class': 'form-control'}),
             'remark': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'qa_note': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }
+
+class TagForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ["name", "slug", "is_active"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "slug": forms.TextInput(attrs={"class": "form-control"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }

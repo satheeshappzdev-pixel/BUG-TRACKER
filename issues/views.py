@@ -10,6 +10,8 @@ from django.contrib.auth import get_user_model
 from .forms import ProjectForm, IssueForm, IssueRemarkLogForm
 from .models import IssueRemarkLog, Project, Issue
 
+from .forms import TagForm
+from .models import Tag
 
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
@@ -61,17 +63,23 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
 # Ensure you import your models and choices here
 # from .models import Issue, Project, IssueStatusChoices, IssuePriorityChoices, IssueEnvironmentChoices, IssueTypeChoices
 
+from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+
+from .models import Issue
+
+
 class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
 
     def get_queryset(self):
-        # Start with optimized select_related
-        qs = Issue.objects.select_related('project', 'assignee', 'reporter').all()
+        qs = Issue.objects.select_related('project', 'assignee', 'reporter').prefetch_related('tags')
 
-        # 1. Search filter
         search = self.request.GET.get('q')
+        print("searchsearchsearch--------", search)
         if search:
             qs = qs.filter(
                 Q(title__icontains=search)
@@ -79,9 +87,9 @@ class IssueListView(LoginRequiredMixin, ListView):
                 | Q(project__name__icontains=search)
                 | Q(assignee__username__icontains=search)
                 | Q(reporter__username__icontains=search)
-            )
+                | Q(tags__name__icontains=search)
+            ).distinct()
 
-        # 2. Basic status and priority filters
         status = self.request.GET.get('status')
         if status:
             qs = qs.filter(status=status)
@@ -94,7 +102,6 @@ class IssueListView(LoginRequiredMixin, ListView):
         if issue_type:
             qs = qs.filter(issue_type=issue_type)
 
-        # 3. Project and Environment filters
         project_id = self.request.GET.get('project')
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -103,7 +110,6 @@ class IssueListView(LoginRequiredMixin, ListView):
         if environment:
             qs = qs.filter(environment=environment)
 
-        # 4. FIXED: Assignee filter (Handles the "me" keyword from Dashboard)
         assignee_id = self.request.GET.get('assignee')
         if assignee_id:
             if assignee_id == 'me':
@@ -111,12 +117,10 @@ class IssueListView(LoginRequiredMixin, ListView):
             else:
                 qs = qs.filter(assignee_id=assignee_id)
 
-        # 5. Logic for dashboard "Assigned" card
         assigned_only = self.request.GET.get('assigned')
         if assigned_only == '1':
             qs = qs.filter(assignee__isnull=False)
 
-        # 6. Related issue filters
         related_filter = self.request.GET.get('related_filter')
         if related_filter == 'has':
             qs = qs.filter(related_issue__isnull=False)
@@ -127,10 +131,13 @@ class IssueListView(LoginRequiredMixin, ListView):
         if related_issue_id:
             qs = qs.filter(related_issue_id=related_issue_id)
 
-        # 7. Add permission check attribute to each object
+        # DEBUG: print final IDs
+        print("ISSUE LIST DEBUG: params =", self.request.GET.dict())
+        print("ISSUE LIST DEBUG: result IDs =", list(qs.values_list("id", flat=True)))
+
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
-            
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -321,3 +328,48 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['search'] = self.request.GET.get('q')
         return context
+    
+
+class TagListView(LoginRequiredMixin, View):
+    def get(self, request):
+        tags = Tag.objects.all()
+        return render(request, "tags/tag_list.html", {"tags": tags})
+
+
+class TagCreateView(LoginRequiredMixin, View):
+    def get(self, request):
+        form = TagForm()
+        return render(request, "tags/tag_form.html", {"form": form, "title": "Create Tag"})
+
+    def post(self, request):
+        form = TagForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("issues:tag_list")
+        return render(request, "tags/tag_form.html", {"form": form, "title": "Create Tag"})
+
+
+class TagUpdateView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        tag = get_object_or_404(Tag, pk=pk)
+        form = TagForm(instance=tag)
+        return render(request, "tags/tag_form.html", {"form": form, "title": "Edit Tag"})
+
+    def post(self, request, pk):
+        tag = get_object_or_404(Tag, pk=pk)
+        form = TagForm(request.POST, instance=tag)
+        if form.is_valid():
+            form.save()
+            return redirect("issues:tag_list")
+        return render(request, "tags/tag_form.html", {"form": form, "title": "Edit Tag"})
+
+
+class TagDeleteView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        tag = get_object_or_404(Tag, pk=pk)
+        return render(request, "tags/tag_confirm_delete.html", {"tag": tag})
+
+    def post(self, request, pk):
+        tag = get_object_or_404(Tag, pk=pk)
+        tag.delete()
+        return redirect("issues:tag_list")
