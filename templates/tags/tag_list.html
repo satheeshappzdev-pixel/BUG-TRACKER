@@ -56,13 +56,13 @@
                     </div>
                 </div>
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
-                        <a href="{% url 'issues:edit' tag.pk %}"
+                        <a href="{% url 'issues:tag_edit' tag.pk %}"
                            class="btn btn-sm btn-outline-light text-white d-flex align-items-center">
                             <span class="material-icons me-1" style="font-size:16px;">edit</span>
                             Edit
                         </a>
-                        <a href="{% url 'issues:delete' tag.pk %}"
+                    {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+                        <a href="{% url 'issues:tag_delete' tag.pk %}"
                            class="btn btn-sm btn-outline-danger text-danger bg-transparent d-flex align-items-center">
                             <span class="material-icons me-1" style="font-size:16px;">delete</span>
                             Delete
