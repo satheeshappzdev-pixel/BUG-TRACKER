@@ -42,9 +42,6 @@
                 <div class="col-md-5 col-lg-4">
                     <div class="glass-card shadow-lg p-4">
                         <div class="text-center mb-5">
-                            <div class="bg-primary rounded-circle mx-auto mb-3 p-4 d-inline-block">
-                                <span class="material-icons text-white fs-1">login</span>
-                            </div>
                             <h2 class="fw-bold text-white mb-1">Welcome Back</h2>
                             <p class="text-white-50 mb-0">Sign in to your Bug Tracker account</p>
                         </div>
@@ -61,7 +58,7 @@
                             {% endif %}
 
                             <div class="mb-4">
-                                <label class="form-label text-white fw-bold mb-2">Email or Username</label>
+                                <label class="form-label text-white fw-bold mb-2">Username</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white border-end-0">
                                         <span class="material-icons small">person</span>
@@ -69,7 +66,7 @@
                                     <input type="text"
                                            name="username"
                                            class="form-control border-start-0 ps-1"
-                                           placeholder="Enter email or username"
+                                           placeholder="Enter username"
                                            required>
                                 </div>
                             </div>
@@ -77,22 +74,112 @@
                             <div class="mb-4">
                                 <label class="form-label text-white fw-bold mb-2">Password</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0">
+                                    <span class="input-group-text bg-white border-end-0" 
+                                        style="border-radius: 50px 0 0 50px !important;">
                                         <span class="material-icons small">lock</span>
                                     </span>
+                                    
                                     <input type="password"
-                                           name="password"
-                                           class="form-control border-start-0 ps-1"
-                                           placeholder="Enter your password"
-                                           required>
+                                        id="passwordField"
+                                        name="password"
+                                        class="form-control border-start-0 border-end-0 ps-1"
+                                        placeholder="Enter your password"
+                                        style="border-radius: 0 !important; box-shadow: none !important;"
+                                        required>
+
+                                    <span class="input-group-text bg-white border-start-0" 
+                                        id="togglePassword" 
+                                        style="cursor: pointer; border-radius: 0 50px 50px 0 !important;">
+                                        <span class="material-icons small text-muted">visibility_off</span>
+                                    </span>
                                 </div>
                             </div>
 
+                            <style>
+                                /* This removes the blue highlight box that breaks the "pill" look on focus */
+                                .input-group .form-control:focus {
+                                    box-shadow: none;
+                                    border-color: #dee2e6;
+                                }
+                                
+                                /* Ensure the input group itself has no background to prevent ghosting edges */
+                                .input-group {
+                                    background: transparent;
+                                }
+                            </style>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    const togglePassword = document.querySelector('#togglePassword');
+                                    const password = document.querySelector('#passwordField');
+                                    const icon = togglePassword.querySelector('.material-icons');
+
+                                    togglePassword.addEventListener('click', function () {
+                                        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                                        password.setAttribute('type', type);
+                                        icon.textContent = type === 'password' ? 'visibility_off' : 'visibility';
+                                    });
+                                });
+                            </script>
                             <button type="submit"
-                                    class="btn btn-light text-primary w-100 py-3 fw-bold d-flex justify-content-center align-items-center">
-                                <span class="material-icons me-2">login</span>
-                                Sign In
+                                    class="btn btn-tracker-premium text-white w-100 fw-bold d-flex justify-content-center align-items-center border-0">
+                                <span class="material-icons me-2" style="font-size: 1.2rem;">login</span>
+                                <span style="letter-spacing: 0.5px;">SIGN IN</span>
                             </button>
+
+                            <style>
+                                .btn-tracker-premium {
+                                    /* Reduced size: py-3 changed to specific height for better control */
+                                    padding: 12px 0; 
+                                    font-size: 0.9rem;
+                                    
+                                    /* Elegant deep-blue to soft-purple gradient */
+                                    background: linear-gradient(135deg, #3a61d0 0%, #4e73df 50%, #6f42c1 100%);
+                                    background-size: 200% auto;
+                                    
+                                    /* Perfectly matching your input rounded corners */
+                                    border-radius: 50px;
+                                    
+                                    transition: all 0.4s cubic-bezier(.25,.8,.25,1);
+                                    box-shadow: 0 4px 15px rgba(58, 97, 208, 0.2);
+                                    position: relative;
+                                    overflow: hidden;
+                                }
+
+                                /* Subtle shimmer animation on hover instead of constant movement */
+                                .btn-tracker-premium:hover {
+                                    background-position: right center;
+                                    box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+                                    transform: translateY(-1px);
+                                    letter-spacing: 1px; /* Slight expansion for a classy feel */
+                                }
+
+                                .btn-tracker-premium:active {
+                                    transform: translateY(0);
+                                    filter: brightness(0.9);
+                                }
+
+                                /* Optional: Soft glass-light effect */
+                                .btn-tracker-premium::before {
+                                    content: "";
+                                    position: absolute;
+                                    top: 0;
+                                    left: -100%;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: linear-gradient(
+                                        120deg,
+                                        transparent,
+                                        rgba(255, 255, 255, 0.2),
+                                        transparent
+                                    );
+                                    transition: 0.6s;
+                                }
+
+                                .btn-tracker-premium:hover::before {
+                                    left: 100%;
+                                }
+                            </style>
                         </form>
                     </div>
 

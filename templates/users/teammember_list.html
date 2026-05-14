@@ -71,16 +71,22 @@
         border: none !important;
         background-color: transparent !important;
         color: rgba(255, 255, 255, 0.6);
-        border-radius: 999px;
+        /* Base shape for all tabs */
+        border-radius: 4px; 
+        transition: all 0.2s ease;
     }
 
     .team-tab.active {
-        background-color: rgba(255, 255, 255, 0.06) !important;
+        /* Square shape for active state */
+        background-color: rgba(255, 255, 255, 0.1) !important;
         color: #ffffff !important;
+        border-radius: 4px !important; /* Forces the square look */
+        /* Optional: adds a subtle bottom border to emphasize the "tab" feel */
+        border-bottom: 2px solid #4e73df !important; 
     }
 
     .team-tab:hover {
-        background-color: rgba(255, 255, 255, 0.03) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
         color: #ffffff !important;
     }
 </style>

@@ -1,139 +1,160 @@
 {% extends "users/index.html" %}
 
-{% block title %}Issues | Bug Tracker{% endblock %}
+{% block title %}My Tasks - Bug Tracker{% endblock %}
 
-{% block nav_my_issues_active %}active{% endblock %}
-{% block dashboard_content %}
-{% block page_header %}
-<div class="row mb-5">
-    <div class="col d-flex align-items-center">
-        <span class="material-icons text-white fs-1 me-2">bug_report</span>
-        <div>
-            <h1 class="text-white fw-bold mb-1">Issues</h1>
-            <p class="text-white-50 mb-0">Browse and manage issues across all projects.</p>
-        </div>
-    </div>
-</div>
+{% block nav_my_tasks_active %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        font-size: 0.875rem;
+        background: radial-gradient(circle at top right, #0a102e 0%, #050505 100%);
+    }
+
+    /* Glassmorphism Metric Cards */
+    .metric-card {
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px !important;
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Issue Card Design */
+    .issue-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        transition: all 0.2s ease;
+    }
+    .issue-card:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .search-container {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+</style>
 {% endblock %}
 
-{% block content %}
-{# Search card #}
-<div class="glass-card p-3 mb-3 text-white">
-    <div class="d-flex justify-content-between align-items-center">
-        <h2 class="h5 mb-0">Search</h2>
-        <form method="get" class="d-flex align-items-center" style="max-width: 480px;">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-transparent border-end-0">
-                    <span class="material-icons text-white-50" style="font-size:28px;">search</span>
-                </span>
-                <input type="text"
-                       name="q"
-                       value="{{ request.GET.q }}"
-                       class="form-control bg-white border-start-0 text-black"
-                       placeholder="Search by title, project, assignee, reporter...">
-                <button type="submit"
-                        class="btn btn-light text-primary fw-semibold d-flex align-items-center ms-2">
-                    <span class="material-icons" style="font-size:28px;">search</span>
-                    <span class="ms-1">Search</span>
-                </button>
-            </div>
-        </form>
+{% block dashboard_content %}
+    {# Header & Search Section #}
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h2 class="text-white fw-bold mb-1">My Tasks</h2>
+            <p class="text-white-50 small mb-0">Manage issues assigned directly to you.</p>
+        </div>
+        <div class="col-auto d-flex align-items-center gap-2">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm search-container">
+                    <input type="text" name="q" value="{{ search_query|default:'' }}" class="form-control bg-transparent border-0 text-white" placeholder="Search tasks...">
+                    <button class="btn border-0 text-white-50" type="submit"><span class="material-icons style-sm">search</span></button>
+                </div>
+                <select name="project" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()" style="width: 140px;">
+                    <option value="">All Projects</option>
+                    {% for p in projects %}
+                        <option value="{{ p.id }}" {% if selected_project_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
     </div>
-</div>
 
-{# Issues cards #}
-{% if issues %}
+    {# Top Metric Cards #}
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center text-white   border-4">
+                    <span class="material-icons text-primary mb-1">assignment</span>
+                    <h3 class="fw-bold mb-0">{{ metrics.total|default:0 }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase">Total Tasks</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center text-white  border-4">
+                    <span class="material-icons text-danger mb-1">priority_high</span>
+                    <h3 class="fw-bold mb-0">{{ metrics.high_priority|default:0 }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase">High Priority</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center text-white  border-4">
+                    <span class="material-icons text-info mb-1">bolt</span>
+                    <h3 class="fw-bold mb-0">{{ metrics.open|default:0 }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase">Open</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center text-white   border-4">
+                    <span class="material-icons text-warning mb-1">sync</span>
+                    <h3 class="fw-bold mb-0">{{ metrics.in_progress|default:0 }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase">In Progress</p>
+                </div>
+            </div>
+        </div>
+
+    {# Top Bar Status Tabs #}
+    <div class="d-flex gap-2 mb-4 overflow-auto pb-2">
+        <a href="?project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">All</a>
+        <a href="?status=open&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">Open</a>
+        <a href="?status=in_progress&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'in_progress' %}btn-warning text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">In Progress</a>
+        <a href="?status=done&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'done' %}btn-success text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">Done</a>
+    </div>
+
+    {# Task List Grid #}
     <div class="row g-3">
         {% for issue in issues %}
-            {% if not request.GET.q or request.GET.q|lower in issue.title|lower %}
-            <div class="col-12 col-md-6">
-                <div class="glass-card p-3 h-100 text-white">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <h5 class="fw-bold mb-1">
-                                <a href="{% url 'issues:issue_detail' issue.pk %}"
-                                   class="text-decoration-none text-white">
-                                    {{ issue.title }}
-                                </a>
-                            </h5>
-                            <div class="small text-white-50 mb-1">
-                                <span class="material-icons align-middle me-1" style="font-size:16px;">folder</span>
-                                <a href="{% url 'issues:project_detail' issue.project.pk %}"
-                                   class="text-decoration-none text-white-50">
-                                    {{ issue.project.name }}
-                                </a>
-                            </div>
-                            <div class="small text-white-50">
-                                <span class="badge bg-secondary me-1">
-                                    {{ issue.get_priority_display }}
-                                </span>
-                                <span class="badge bg-info text-dark">
-                                    {{ issue.get_status_display }}
-                                </span>
-                                <span class="badge bg-primary me-1">
-                                    {{ issue.get_environment_display }}
-                                </span>
-                            </div>
-                        </div>
-                        <span class="material-icons text-white-50">
-                            bug_report
-                        </span>
+        <div class="col-12 col-md-6">
+            <div class="issue-card p-3 text-white">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-primary small fw-bold mb-1">{{ issue.project.name }}</div>
+                        <h6 class="fw-bold mb-0">
+                            <a href="{% url 'issues:issue_detail' issue.pk %}" class="text-white text-decoration-none">
+                                {{ issue.project.code }}-{{ issue.pk }}: {{ issue.title }}
+                            </a>
+                        </h6>
                     </div>
-
-                    <div class="small text-white-50 mb-1">
-                        Key:
-                        <span class="fw-semibold text-white">
-                            {% if issue.project.code %}
-                                {{ issue.project.code }}-{{ issue.pk }}
-                            {% else %}
-                                #{{ issue.pk }}
-                            {% endif %}
-                        </span>
+                    <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark">
+                        {{ issue.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-icons text-white-50" style="font-size: 16px;">history</span>
+                        <span class="text-white-50 smaller">{{ issue.updated_at|date:"M d" }}</span>
                     </div>
-                    <div class="small text-white-50 mb-1">
-                        Assignee:
-                        {% if issue.assignee %}
-                            {{ issue.assignee.get_short_name|default:issue.assignee.username }}
-                        {% else %}
-                            <em>Unassigned</em>
-                        {% endif %}
-                    </div>
-                    <div class="small text-white-50 mb-1">
-                        Reporter:
-                        {% if issue.reporter %}
-                            {{ issue.reporter.get_short_name|default:issue.reporter.username }}
-                        {% else %}
-                            <em>-</em>
-                        {% endif %}
-                    </div>
-                    <div class="small text-white-50 mb-3">
-                        Updated: {{ issue.updated_at|date:"Y-m-d H:i" }}
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'issues:issue_detail' issue.pk %}"
-                           class="btn btn-sm btn-light text-primary d-inline-flex align-items-center">
-                            <span class="material-icons me-1" style="font-size:16px;">visibility</span>
-                            View
+                    <div class="d-flex gap-2">
+                        {% if issue.can_edit %}
+                        <a href="{% url 'issues:issue_update' issue.pk %}" class="btn btn-sm btn-outline-light border-0 px-2 py-0">
+                            <span class="material-icons" style="font-size: 18px;">edit</span>
                         </a>
-                    {% if issue.can_edit %}
-                        <a href="{% url 'issues:issue_update' issue.pk %}"
-                        class="btn btn-sm btn-outline-light text-white d-inline-flex align-items-center">
-                            <span class="material-icons me-1" style="font-size:16px;">edit</span>
-                            Edit
-                        </a>
-                    {% endif %}
+                        {% endif %}
+                        <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-0 px-3" style="font-size: 0.75rem;">VIEW</a>
                     </div>
                 </div>
             </div>
-            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <span class="material-icons fs-1 text-white-50">task_alt</span>
+            <p class="text-white-50 mt-2">No tasks found matching your criteria.</p>
+        </div>
         {% endfor %}
     </div>
-{% else %}
-    <div class="glass-card text-center py-4 text-white">
-        <span class="material-icons fs-1 text-white-50 mb-2">bug_report</span>
-        <p class="text-white-50 mb-0">No issues found.</p>
-    </div>
-{% endif %}
-{% endblock %}
 {% endblock %}

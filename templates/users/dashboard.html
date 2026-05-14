@@ -4,151 +4,151 @@
 
 {% block nav_dashboard_active %}active{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Compact Typography & Colors */
+    body {
+        font-size: 0.875rem;
+        background: radial-gradient(circle at top right, #0a102e 0%, #050505 100%);
+    }
+
+    /* Refined Metric Cards (Top 4) */
+    .metric-card {
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px !important;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Compact Status Cards (Grid) */
+    .status-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+    .status-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    .status-badge-count {
+        font-size: 1.2rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px 12px;
+        border-radius: 8px;
+    }
+
+    /* Clean Activity List */
+    .activity-link {
+        transition: opacity 0.2s;
+        font-size: 0.9rem;
+    }
+    .activity-link:hover {
+        opacity: 0.8;
+        color: #4e73df !important;
+    }
+    
+    .form-select-sm {
+        font-size: 0.8rem;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
 {% block dashboard_content %}
-    {% block page_header %}
-    <div class="row mb-5 align-items-center">
+    {# Header Section #}
+    <div class="row mb-4 align-items-center">
         <div class="col">
-            <h1 class="text-white fw-bold display-5 mb-1">Dashboard</h1>
-            <p class="text-white-50 mb-0">Here's what's happening with your work today.</p>
+            <h2 class="text-white fw-bold mb-1">Dashboard</h2>
+            <p class="text-white-50 small mb-0">Here's what's happening with your work today.</p>
         </div>
-        <div class="col-auto d-flex align-items-center gap-3">
-            <form method="get" class="d-flex align-items-center gap-3">
+        <div class="col-auto d-flex align-items-center gap-2">
+            <form method="get" class="d-flex align-items-center gap-2">
                 <div class="d-flex align-items-center">
-                    <label for="project-select" class="text-white-50 me-2 small mb-0">Project:</label>
-                    <select id="project-select" name="project" class="form-select form-select-sm bg-dark text-white border-0"
-                            onchange="this.form.submit()">
+                    <label class="text-white-50 me-2 small mb-0">Project:</label>
+                    <select name="project" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
                         <option value="">All</option>
                         {% for p in projects %}
-                            <option value="{{ p.id }}"
-                                {% if selected_project_id|default_if_none:'' == p.id|stringformat:'s' %}selected{% endif %}>
-                                {{ p.name }}
-                            </option>
+                            <option value="{{ p.id }}" {% if selected_project_id|default_if_none:'' == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="d-flex align-items-center">
-                    <label for="source-select" class="text-white-50 me-2 small mb-0">Source:</label>
-                    <select id="source-select" name="source" class="form-select form-select-sm bg-dark text-white border-0"
-                            onchange="this.form.submit()">
+                    <label class="text-white-50 me-2 small mb-0">Source:</label>
+                    <select name="source" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
                         <option value="ALL" {% if selected_source == 'ALL' %}selected{% endif %}>ALL</option>
                         <option value="MINE" {% if selected_source == 'MINE' %}selected{% endif %}>MINE</option>
                     </select>
                 </div>
-                <input type="hidden" name="project" value="{{ selected_project_id|default:'' }}">
             </form>
-            <div class="d-none d-sm-inline-flex align-items-center bg-glass-auth px-3 py-2 rounded-pill shadow-sm border border-white-25 text-white">
-                <span class="text-truncate me-2" style="max-width: 140px;">
-                    {{ request.user.get_full_name|default:request.user.username }}
-                </span>
-                <span class="material-icons opacity-75">account_circle</span>
+            <div class="ms-2 d-none d-sm-inline-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary text-white small">
+                <span class="me-2">{{ request.user.username }}</span>
+                <span class="material-icons style-sm">account_circle</span>
             </div>
         </div>
     </div>
-    {% endblock %}
 
-    {% block content %}
-    <div class="row g-4 mb-5">
-        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
-            {# MANAGEMENT VIEW #}
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">bug_report</span>
-                        <h3 class="fw-bold mb-1">{{ active_bugs }}</h3>
-                        <p class="mb-0 opacity-75">Active Bugs</p>
-                    </div>
-                </a>
-            </div>
+    {# Top 4 Metric Cards #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.OPEN.value }}" class="text-decoration-none">
+                <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                    <span class="material-icons text-primary mb-2">bug_report</span>
+                    <h3 class="fw-bold mb-0">{{ active_bugs }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">Active Bugs</p>
+                </div>
+            </a>
+        </div>
 
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.IN_PROGRESS.value }}&assigned=1&issue_type={{ IssueTypeChoices.TASK.value }}" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">task_alt</span>
-                        <h3 class="fw-bold mb-1">{{ active_tasks }}</h3>
-                        <p class="mb-0 opacity-75">Progressing Tasks</p>
-                    </div>
-                </a>
-            </div>
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.IN_PROGRESS.value }}&issue_type={{ IssueTypeChoices.TASK.value }}" class="text-decoration-none">
+                <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                    <span class="material-icons text-success mb-2">task_alt</span>
+                    <h3 class="fw-bold mb-0">{{ active_tasks }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">In Progress</p>
+                </div>
+            </a>
+        </div>
 
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&priority={{ IssuePriorityChoices.HIGH.value }}" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">priority_high</span>
-                        <h3 class="fw-bold mb-1">{{ high_priority_bugs }}</h3>
-                        <p class="mb-0 opacity-75">High Priority Bugs</p>
-                    </div>
-                </a>
-            </div>
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&priority={{ IssuePriorityChoices.HIGH.value }}" class="text-decoration-none">
+                <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                    <span class="material-icons text-danger mb-2">priority_high</span>
+                    <h3 class="fw-bold mb-0">{{ high_priority_bugs }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">High Priority</p>
+                </div>
+            </a>
+        </div>
 
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&assignee=me" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">assignment_ind</span>
-                        <h3 class="fw-bold mb-1">{{ my_open_issues }}</h3>
-                        <p class="mb-0 opacity-75">My Tasks / Issues</p>
-                    </div>
-                </a>
-            </div>
-
-        {% else %}
-            {# DEVELOPER VIEW - Using 'assignee=me' which is now handled by the updated view #}
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&assignee=me" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">bug_report</span>
-                        <h3 class="fw-bold mb-1">{{ active_bugs }}</h3>
-                        <p class="mb-0 opacity-75">My Active Bugs</p>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.IN_PROGRESS.value }}&issue_type={{ IssueTypeChoices.TASK.value }}&assignee=me" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">task_alt</span>
-                        <h3 class="fw-bold mb-1">{{ active_tasks }}</h3>
-                        <p class="mb-0 opacity-75">My Progressing Tasks</p>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&priority={{ IssuePriorityChoices.HIGH.value }}&assignee=me" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">priority_high</span>
-                        <h3 class="fw-bold mb-1">{{ high_priority_bugs }}</h3>
-                        <p class="mb-0 opacity-75">My High Priority Bugs</p>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ IssueStatusChoices.OPEN.value }}&assignee=me" class="text-decoration-none">
-                    <div class="metric-card glass-card p-4 h-100 text-center text-white">
-                        <span class="material-icons fs-1 mb-2">assignment_ind</span>
-                        <h3 class="fw-bold mb-1">{{ my_open_issues }}</h3>
-                        <p class="mb-0 opacity-75">My Tasks / Issues</p>
-                    </div>
-                </a>
-            </div>
-        {% endif %}
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&assignee=me" class="text-decoration-none">
+                <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                    <span class="material-icons text-info mb-2">assignment_ind</span>
+                    <h3 class="fw-bold mb-0">{{ my_open_issues }}</h3>
+                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">My Tasks</p>
+                </div>
+            </a>
+        </div>
     </div>
 
-    {# Status Stats Section #}
-    <div class="row g-3 mb-5">
+    {# Status Grid - All Statuses #}
+    <div class="row g-2 mb-4">
         {% for row in issue_status_stats %}
-            <div class="col-12 col-sm-6 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ row.value }}" class="text-decoration-none">
-                    <div class="glass-card p-3 h-100 text-white">
-                        <div class="row align-items-center">
-                            <div class="col-8">
-                                <div class="text-white-50 small mb-1">Status</div>
-                                <h5 class="fw-bold mb-1 text-truncate">{{ row.label }}</h5>
-                                <div class="text-white-50 small mt-2">{{ row.count }} issues</div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?status={{ row.value }}&source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-decoration-none">
+                    <div class="status-card p-3 h-100 text-white">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-white-50 small text-uppercase" style="font-size: 0.65rem;">Status</div>
+                                <h6 class="fw-bold mb-1">{{ row.label }}</h6>
+                                <div class="text-white-50" style="font-size: 0.75rem;">{{ row.count }} Issues</div>
                             </div>
-                            <div class="col-4 text-end">
-                                <div class="display-6 fw-bold">{{ row.count }}</div>
-                            </div>
+                            <div class="status-badge-count">{{ row.count }}</div>
                         </div>
                     </div>
                 </a>
@@ -156,30 +156,63 @@
         {% endfor %}
     </div>
 
-    {# Recent Activity Section #}
+{# Recent Activity #}
     <div class="glass-card p-4">
-        <h4 class="text-white fw-bold mb-3">Recent Activity</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-white fw-bold mb-0">Recent Activity</h5>
+            <span class="material-icons text-white-50">history</span>
+        </div>
+        
         {% if recent_activities %}
             <div class="list-group list-group-flush">
                 {% for log in recent_activities %}
-                    <div class="list-group-item bg-transparent border-0 px-0 py-2">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="material-icons text-primary fs-4">history</span>
+                    <div class="list-group-item bg-transparent border-bottom border-white-10 px-0 py-3">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary rounded-circle p-2 me-3" style="--bs-bg-opacity: .1;">
+                                <span class="material-icons text-primary" style="font-size: 1.2rem;">
+                                    {% if log.to_status %}sync_alt{% else %}edit_note{% endif %}
+                                </span>
                             </div>
-                            <div class="col">
-                                <h6 class="text-white mb-1">
-                                    {{ log.author.username }} • {{ log.issue.project.name }} › {{ log.issue.title }}
-                                </h6>
-                                <small class="text-white-50">{{ log.created_at|timesince }} ago</small>
+
+                            <div class="flex-grow-1">
+                                <div class="text-white-50 small mb-1 d-flex align-items-center flex-wrap gap-2">
+                                    <span class="text-white fw-bold">{{ log.author.username }}</span> 
+                                    <span>modified an issue in</span>
+                                    <span class="badge bg-secondary" style="--bs-bg-opacity: .2;">{{ log.issue.project.name }}</span>
+                                    
+                                    {# Status Change Indicator #}
+                                    {% if log.from_status or log.to_status %}
+                                        <div class="d-flex align-items-center ms-auto bg-dark px-2 py-1 rounded" style="font-size: 0.7rem;">
+                                            <span class="text-white-50">{{ log.from_status|default:"New" }}</span>
+                                            <span class="material-icons mx-1" style="font-size: 10px;">arrow_forward</span>
+                                            <span class="text-info fw-bold">{{ log.to_status }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <a href="{% url 'issues:issue_detail' log.issue.id %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}" 
+                                   class="text-white text-decoration-none activity-link fw-semibold d-block">
+                                    {{ log.issue.title }}
+                                </a>
+
+                                {% if log.remark %}
+                                    <div class="text-white-50 small fst-italic mt-1 border-start border-primary border-2 ps-2" style="--bs-text-opacity: .7;">
+                                        "{{ log.remark|truncatechars:80 }}"
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="text-white-50 mt-1" style="font-size: 0.75rem;">
+                                    {{ log.created_at|timesince }} ago
+                                </div>
                             </div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p class="text-white-50 mb-0">No recent activity yet.</p>
+            <div class="text-center py-4">
+                <p class="text-white-50 mb-0 small">No activity recorded for this filter.</p>
+            </div>
         {% endif %}
     </div>
-    {% endblock %}
 {% endblock %}

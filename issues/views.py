@@ -6,12 +6,24 @@ from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
 
+from django.db.models import Q, Count
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Issue
+
+
 from django.contrib.auth import get_user_model
 from .forms import ProjectForm, IssueForm, IssueRemarkLogForm
 from .models import IssueRemarkLog, Project, Issue
 
 from .forms import TagForm
 from .models import Tag
+from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+
+from .models import Issue
+
 
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
@@ -58,17 +70,7 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         project = form.save()
         return redirect('issues:project_detail', pk=project.pk)
-
-
-# Ensure you import your models and choices here
-# from .models import Issue, Project, IssueStatusChoices, IssuePriorityChoices, IssueEnvironmentChoices, IssueTypeChoices
-
-from django.db.models import Q
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
-
-from .models import Issue
-
+    
 
 class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
@@ -79,7 +81,6 @@ class IssueListView(LoginRequiredMixin, ListView):
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').prefetch_related('tags')
 
         search = self.request.GET.get('q')
-        print("searchsearchsearch--------", search)
         if search:
             qs = qs.filter(
                 Q(title__icontains=search)
@@ -103,12 +104,17 @@ class IssueListView(LoginRequiredMixin, ListView):
             qs = qs.filter(issue_type=issue_type)
 
         project_id = self.request.GET.get('project')
-        if project_id:
+        if project_id:  # Handles non-empty project ID
             qs = qs.filter(project_id=project_id)
 
         environment = self.request.GET.get('environment')
         if environment:
             qs = qs.filter(environment=environment)
+
+        # Handle source=MINE (Issues involving the current user)
+        source = self.request.GET.get('source')
+        if source == 'MINE':
+            qs = qs.filter(Q(assignee=self.request.user) | Q(reporter=self.request.user))
 
         assignee_id = self.request.GET.get('assignee')
         if assignee_id:
@@ -116,6 +122,13 @@ class IssueListView(LoginRequiredMixin, ListView):
                 qs = qs.filter(assignee=self.request.user)
             else:
                 qs = qs.filter(assignee_id=assignee_id)
+
+        reporter_id = self.request.GET.get('reporter')
+        if reporter_id:
+            if reporter_id == 'me':
+                qs = qs.filter(reporter=self.request.user)
+            else:
+                qs = qs.filter(reporter_id=reporter_id)
 
         assigned_only = self.request.GET.get('assigned')
         if assigned_only == '1':
@@ -131,10 +144,7 @@ class IssueListView(LoginRequiredMixin, ListView):
         if related_issue_id:
             qs = qs.filter(related_issue_id=related_issue_id)
 
-        # DEBUG: print final IDs
-        print("ISSUE LIST DEBUG: params =", self.request.GET.dict())
-        print("ISSUE LIST DEBUG: result IDs =", list(qs.values_list("id", flat=True)))
-
+        # Apply authorization flag to results
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
 
@@ -143,15 +153,21 @@ class IssueListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Persist search and project state in template
+        # Persist state in template
         context['search'] = self.request.GET.get('q')
         context['selected_project_id'] = self.request.GET.get('project')
+        context['selected_source'] = self.request.GET.get('source')
 
         # Dropdown data for filters
         context['projects'] = Project.objects.all()
         context['assignees'] = (
             get_user_model()
             .objects.filter(assigned_issues__isnull=False)
+            .distinct()
+        )
+        context['reporters'] = (
+            get_user_model()
+            .objects.filter(reported_issues__isnull=False)
             .distinct()
         )
         # Related tasks lookup
@@ -166,6 +182,7 @@ class IssueListView(LoginRequiredMixin, ListView):
         context['IssueTypeChoices'] = IssueTypeChoices
 
         return context
+
 
 class IssueDetailView(LoginRequiredMixin, DetailView):
     model = Issue
@@ -298,35 +315,51 @@ class IssueAddRemarkView(LoginRequiredMixin, View):
     
 
 
-
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
     context_object_name = 'issues'
 
     def get_queryset(self):
+        # 1. Base Queryset for the logged in user
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').filter(
             assignee=self.request.user
         )
+        
+        # 2. Search Logic
         search = self.request.GET.get('q')
         if search:
             qs = qs.filter(
                 Q(title__icontains=search)
                 | Q(description__icontains=search)
                 | Q(project__name__icontains=search)
-                | Q(assignee__username__icontains=search)
-                | Q(reporter__username__icontains=search)
             )
+            
+        # 3. Status Filter Logic (Top Bar)
         status = self.request.GET.get('status')
         if status:
             qs = qs.filter(status=status)
+            
+        # 4. Permission tagging
         for issue in qs:
             issue.can_edit = issue.is_authorized(self.request.user)
+            
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Aggregated counts for the summary bar
+        user_issues = Issue.objects.filter(assignee=self.request.user)
+        context['summary'] = user_issues.aggregate(
+            total=Count('id'),
+            open=Count('id', filter=Q(status='open')),
+            in_progress=Count('id', filter=Q(status='in_progress')),
+            done=Count('id', filter=Q(status='done'))
+        )
+        
         context['search'] = self.request.GET.get('q')
+        context['current_status'] = self.request.GET.get('status')
         return context
     
 
