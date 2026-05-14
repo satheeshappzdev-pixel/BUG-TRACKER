@@ -21,7 +21,12 @@ from .models import Tag
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count, Q
+from django.views.generic import DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Project, Issue
 from .models import Issue
 
 
@@ -40,14 +45,83 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'project'
 
     def get_queryset(self):
-        return Project.objects.select_related('owner', 'team')
+        return Project.objects.select_related('owner')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
-        context['issues'] = project.issues.select_related('assignee', 'reporter').all()
-        return context
+        
+        # 1. Handle Time Filtering
+        period = self.request.GET.get('period', 'all')
+        now = timezone.now()
+        issues_qs = project.issues.select_related('assignee')
 
+        if period == 'daily':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            issues_qs = issues_qs.filter(created_at__gte=start_date)
+        elif period == 'weekly':
+            start_date = now - timedelta(days=7)
+            issues_qs = issues_qs.filter(created_at__gte=start_date)
+
+        # 2. Dynamic Annotation for all Statuses
+        status_annotations = {
+            f"{status.lower()}_count": Count('id', filter=Q(status=status))
+            for status, label in IssueStatusChoices.choices
+        }
+
+        # Added first_name and last_name to values()
+        member_summary_qs = issues_qs.values(
+            'assignee__username', 
+            'assignee__id',
+            'assignee__first_name',
+            'assignee__last_name'
+        ).annotate(
+            total=Count('id'),
+            high_priority=Count('id', filter=Q(priority='high')),
+            **status_annotations
+        ).order_by('-total')
+
+        # Convert QuerySet to list to modify objects for the template
+        member_summary = list(member_summary_qs)
+
+        # 3. Data Transformation (Removing need for get_item tag)
+        for member in member_summary:
+            # --- Logic to create full name ---
+            first = member.get('assignee__first_name')
+            last = member.get('assignee__last_name')
+            if first and last:
+                member['full_display_name'] = f"{first} {last}"
+            elif first:
+                member['full_display_name'] = first
+            else:
+                member['full_display_name'] = member.get('assignee__username') or "Unassigned"
+            # ---------------------------------
+
+            counts_list = []
+            for status, label in IssueStatusChoices.choices:
+                key = f"{status.lower()}_count"
+                counts_list.append({
+                    'label': label,
+                    'count': member.get(key, 0),
+                    'slug': status.lower() # For CSS class mapping
+                })
+            member['status_counts_list'] = counts_list
+
+        # 4. Overall Metrics
+        metrics = issues_qs.aggregate(
+            total=Count('id'),
+            high_priority=Count('id', filter=Q(priority='high')),
+            **status_annotations
+        )
+
+        context.update({
+            'issues': issues_qs.order_by('-created_at')[:10],
+            'member_summary': member_summary,
+            'metrics': metrics,
+            'current_period': period,
+            'status_choices': IssueStatusChoices.choices
+        })
+        return context
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
