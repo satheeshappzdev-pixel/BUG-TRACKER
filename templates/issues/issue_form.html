@@ -2,22 +2,138 @@
 
 {% block title %}{% if issue %}Edit Issue{% else %}New Issue{% endif %} | Bug Tracker{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Theme matching Dashboard/Login */
+    body {
+        font-size: 0.875rem;
+        background: radial-gradient(circle at top right, #0a102e 0%, #050505 100%);
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Premium Input Styling */
+    .glass-card select,
+    .glass-card textarea,
+    .glass-card input {
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        font-size: 0.85rem;
+        padding: 10px 15px;
+    }
+
+    .glass-card select option {
+        background-color: #0a102e;
+        color: white;
+    }
+
+    .glass-card input[readonly] {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        opacity: 0.7;
+    }
+
+    .glass-card select:focus, .glass-card textarea:focus, .glass-card input:focus {
+        border-color: #4e73df !important;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.2) !important;
+        outline: none;
+    }
+
+    .section-label {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    /* Tag Selector Refinement */
+    .react-tag-select-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .react-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50px;
+        background: rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .react-tag-pill:hover {
+        background: rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.5);
+        color: white;
+    }
+
+    .react-tag-pill input:checked + span {
+        color: #60a5fa;
+        font-weight: 600;
+    }
+
+    .react-tag-pill input:checked + span::before {
+        content: '✓ ';
+    }
+
+    /* Form Buttons */
+    .btn-submit {
+        background: linear-gradient(135deg, #3a61d0 0%, #6f42c1 100%);
+        border: none;
+        border-radius: 50px;
+        padding: 10px 30px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(58, 97, 208, 0.3);
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.1);
+        box-shadow: 0 6px 20px rgba(58, 97, 208, 0.4);
+    }
+
+    /* Hide base multi-select */
+    .react-tag-select select[multiple] {
+        display: none;
+    }
+</style>
+{% endblock %}
+
 {% block dashboard_content %}
 {% block page_header %}
-<div class="row mb-4">
+<div class="row mb-5">
     <div class="col d-flex align-items-center">
-        <span class="material-icons text-white fs-1 me-2">bug_report</span>
+        <div class="p-3 rounded-4 bg-primary bg-opacity-10 me-3 border border-primary border-opacity-25">
+            <span class="material-icons text-primary fs-1">bug_report</span>
+        </div>
         <div>
-            <p class="small mb-1 text-white-50 my-3">
-                <a href="{% url 'issues:project_detail' project.pk %}" class="text-decoration-none text-white-50">
+            <p class="small mb-1 text-white-50">
+                <a href="{% url 'issues:project_detail' project.pk %}" class="text-decoration-none text-primary fw-bold">
                     {{ project.name }}
                 </a>
-                &raquo;
-                {% if issue %}Edit Issue{% else %}New Issue{% endif %}
+                <span class="mx-2 opacity-50">&raquo;</span> {% if issue %}Edit{% else %}New{% endif %} Issue
             </p>
-            <h1 class="text-white fw-bold mb-0">
-                {% if issue %}Edit Issue{% else %}New Issue{% endif %}
-            </h1>
+            <h1 class="text-white fw-bold mb-0">{% if issue %}Edit Issue{% else %}New Issue{% endif %}</h1>
         </div>
     </div>
 </div>
@@ -28,290 +144,162 @@
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-        <div class="alert alert-danger mb-3">
+        <div class="alert alert-danger bg-danger bg-opacity-25 border-danger text-white rounded-4 mb-4">
             {{ form.non_field_errors }}
         </div>
     {% endif %}
 
-    <div class="row">
-        {# LEFT: main content (description, remarks, qa, attachments) #}
+    <div class="row g-4">
+        {# LEFT: main content #}
         <div class="col-lg-8">
             <div class="glass-card p-4 mb-4">
-                {# Top meta fields (project, title, status, priority) #}
+                <span class="section-label">General Information</span>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         {% with field=form.project %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">
                                 {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
+                            {% for error in field.errors %}<div class="text-danger smaller mt-1">{{ error }}</div>{% endfor %}
                         {% endwith %}
                     </div>
                     <div class="col-md-6 mb-3">
                         {% with field=form.title %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">
                                 {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
+                            {% for error in field.errors %}<div class="text-danger smaller mt-1">{{ error }}</div>{% endfor %}
                         {% endwith %}
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row mt-2">
                     <div class="col-md-3 mb-3">
                         {% with field=form.status %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
                         {% endwith %}
                     </div>
                     <div class="col-md-3 mb-3">
                         {% with field=form.priority %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
                         {% endwith %}
                     </div>
                     <div class="col-md-3 mb-3">
                         {% with field=form.environment %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
                         {% endwith %}
                     </div>
                     <div class="col-md-3 mb-3">
                         {% with field=form.issue_type %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
                         {% endwith %}
                     </div>
                 </div>
             </div>
-            <div class="glass-card p-4 mb-4">
-                <h5 class="text-white mb-3">Description</h5>
 
-                <!-- Description row -->
-                <div class="mb-3 d-flex align-items-start">
+            <div class="glass-card p-4 mb-4">
+                <span class="section-label">Details & Context</span>
+                <div class="mb-4">
                     {% with field=form.description %}
-                        <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 150px;">
-                            {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                        </label>
-                        <div class="flex-grow-1">
-                            {{ field }}
-                            {% if field.help_text %}
-                                <div class="form-text text-white-50">{{ field.help_text }}</div>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<div class="form-text text-white-50 smaller">{{ field.help_text }}</div>{% endif %}
                     {% endwith %}
                 </div>
 
-                <!-- Drive URL row -->
-                <div class="mb-3 d-flex align-items-start">
+                <div class="mb-2">
                     {% with field=form.drive_url %}
-                        <label class="form-label text-white me-3 mt-2" for="{{ field.id_for_label }}" style="min-width: 150px;">
-                            {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                        </label>
-                        <div class="flex-grow-1">
+                        <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div class="glass-card p-4 mb-4">
+                <span class="section-label">Collaboration Notes</span>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.remarks %}
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
-                            {% if field.help_text %}
-                                <div class="form-text text-white-50">{{ field.help_text }}</div>
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {% with field=form.qa_note %}
+                            <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 mb-4">
+                <span class="section-label">Attachments</span>
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if "image" in field.name %}
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50 small">{{ field.label }}</label>
+                            {% if issue %}
+                                {% if field.name == 'image_1' and issue.image_1 %}<img src="{{ issue.image_1.url }}" class="img-fluid rounded-3 mb-2 border border-white border-opacity-10">
+                                {% elif field.name == 'image_2' and issue.image_2 %}<img src="{{ issue.image_2.url }}" class="img-fluid rounded-3 mb-2 border border-white border-opacity-10">
+                                {% elif field.name == 'image_3' and issue.image_3 %}<img src="{{ issue.image_3.url }}" class="img-fluid rounded-3 mb-2 border border-white border-opacity-10">
+                                {% elif field.name == 'image_4' and issue.image_4 %}<img src="{{ issue.image_4.url }}" class="img-fluid rounded-3 mb-2 border border-white border-opacity-10">
+                                {% endif %}
                             {% endif %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
+                            <div class="p-2 rounded-3" style="background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.2);">
+                                {{ field }}
+                            </div>
                         </div>
-                    {% endwith %}
-                </div>
-            </div>
-
-
-            <div class="glass-card p-4 mb-4">
-                {# Remarks / QA note #}
-                <h5 class="text-white mb-3">Remarks</h5>
-                <div class="mb-3">
-                    {% with field=form.remarks %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            {{ field.label }}
-                        </label>
-                        {{ field }}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-
-                <h5 class="text-white mb-3">QA Note</h5>
-                <div class="mb-3">
-                    {% with field=form.qa_note %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            {{ field.label }}
-                        </label>
-                        {{ field }}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-            </div>
-
-            <div class="glass-card p-4 mb-4">
-                {# Attachments #}
-                <h5 class="text-white mb-3">Attachments</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {% with field=form.image_1 %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
-                            {% if issue and issue.image_1 %}
-                                <div class="mb-2">
-                                    <img src="{{ issue.image_1.url }}" alt="Image 1" class="img-fluid rounded">
-                                </div>
-                            {% endif %}
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endwith %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {% with field=form.image_2 %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
-                            {% if issue and issue.image_2 %}
-                                <div class="mb-2">
-                                    <img src="{{ issue.image_2.url }}" alt="Image 2" class="img-fluid rounded">
-                                </div>
-                            {% endif %}
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endwith %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {% with field=form.image_3 %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
-                            {% if issue and issue.image_3 %}
-                                <div class="mb-2">
-                                    <img src="{{ issue.image_3.url }}" alt="Image 3" class="img-fluid rounded">
-                                </div>
-                            {% endif %}
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endwith %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {% with field=form.image_4 %}
-                            <label class="form-label text-white" for="{{ field.id_for_label }}">
-                                {{ field.label }}
-                            </label>
-                            {% if issue and issue.image_4 %}
-                                <div class="mb-2">
-                                    <img src="{{ issue.image_4.url }}" alt="Image 4" class="img-fluid rounded">
-                                </div>
-                            {% endif %}
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endwith %}
-                    </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
         </div>
 
-        {# RIGHT: details-style sidebar #}
+        {# RIGHT: sidebar #}
         <div class="col-lg-4">
             <div class="glass-card p-4 mb-4">
-                <h5 class="text-white mb-3">People & Estimate</h5>
-                <div class="mb-3">
+                <span class="section-label">Assignments & Tags</span>
+                
+                <div class="mb-4">
                     {% with field=form.reporter %}
-                        <label class="form-label text-white">{{ field.label }}</label>
-                        <input type="text" 
-                            class="form-control bg-secondary text-white" 
-                            value="{{ request.user.get_full_name|default:request.user.username }}" 
-                            readonly>
+                        <label class="form-label text-white-50 small">{{ field.label }}</label>
+                        <input type="text" class="form-control" value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
                         <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:request.user.id }}">
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
                     {% endwith %}
                 </div>
-                <div class="mb-3">
+
+                <div class="mb-4">
                     {% with field=form.assignee %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            {{ field.label }}
-                        </label>
+                        <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
                     {% endwith %}
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-4">
                     {% with field=form.related_issue %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            Related issue (optional)
-                        </label>
+                        <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">Related issue</label>
                         {{ field }}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
                     {% endwith %}
                 </div>
-                {# NEW: tags (multi-select dropdown) #}
-                {# Keep your Django field for form submission #}
-                <div class="mb-3">
+
+                <div class="mb-4">
                     {% with field=form.tags %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            Tags (optional)
-                        </label>
-
+                        <label class="form-label text-white-50 small">Tags</label>
                         <div class="react-tag-select">
-                            {{ field }}  {# select[multiple] will be hidden by CSS #}
-
+                            {{ field }}
                             <div class="react-tag-select-display">
                                 {% for opt in field.field.choices %}
                                     {% if opt.0 %}
                                         <label class="react-tag-pill">
-                                            <input type="checkbox"
-                                                name="{{ field.name }}"
-                                                value="{{ opt.0 }}"
+                                            <input type="checkbox" name="{{ field.name }}" value="{{ opt.0 }}"
                                                 {% if opt.0|stringformat:"s" in field.value|stringformat:"s" %}checked{% endif %}>
                                             <span>{{ opt.1 }}</span>
                                         </label>
@@ -319,109 +307,35 @@
                                 {% endfor %}
                             </div>
                         </div>
-
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
                     {% endwith %}
                 </div>
 
-<style>
-    /* Hide the original multiple select visually but keep it in the DOM */
-    .react-tag-select select[multiple] {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-        height: 0;
-        width: 0;
-    }
-
-    .react-tag-select-display {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-        padding: 0.35rem;
-        border-radius: 0.5rem;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(148, 163, 184, 0.5);
-    }
-
-    .react-tag-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.15rem 0.6rem;
-        border-radius: 999px;
-        background: rgba(148, 163, 184, 0.15);
-        border: 1px solid rgba(148, 163, 184, 0.5);
-        color: #e5e7eb;
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-    }
-
-    .react-tag-pill input {
-        display: none;
-    }
-
-    .react-tag-pill span {
-        pointer-events: none;
-    }
-
-    .react-tag-pill:hover {
-        background: rgba(59, 130, 246, 0.25);
-        border-color: rgba(59, 130, 246, 0.7);
-        transform: translateY(-1px);
-    }
-
-    .react-tag-pill input:checked + span,
-    .react-tag-pill input:checked ~ span {
-        background: transparent;
-        color: #0ea5e9;
-        font-weight: 600;
-    }
-
-    .react-tag-pill input:checked + span::before,
-    .react-tag-pill input:checked ~ span::before {
-        content: '✓ ';
-        font-weight: 700;
-    }
-</style>
-                <div class="mb-3">
+                <div class="mb-0">
                     {% with field=form.time_estimate_hours %}
-                        <label class="form-label text-white" for="{{ field.id_for_label }}">
-                            {{ field.label }}
-                        </label>
+                        <label class="form-label text-white-50 small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% if field.help_text %}
-                            <div class="form-text text-white-50">{{ field.help_text }}</div>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
+                        {% if field.help_text %}<div class="form-text text-white-50 smaller">{{ field.help_text }}</div>{% endif %}
                     {% endwith %}
                 </div>
 
                 {% if issue %}
-                    <hr class="border-secondary">
-                    <p class="mb-1 text-white-50 small">
-                        Created: {{ issue.created_at }}
-                    </p>
-                    <p class="mb-0 text-white-50 small">
-                        Updated: {{ issue.updated_at }}
-                    </p>
+                    <div class="mt-4 pt-3 border-top border-white border-opacity-10">
+                        <p class="mb-1 text-white-50 smaller">Created: {{ issue.created_at|date:"M d, Y" }}</p>
+                        <p class="mb-0 text-white-50 smaller">Last Updated: {{ issue.updated_at|date:"M d, Y" }}</p>
+                    </div>
                 {% endif %}
             </div>
-        </div>
-    </div>
 
-    <div class="d-flex justify-content-between mt-3">
-        <a href="{% if issue %}{% url 'issues:issue_detail' issue.pk %}{% else %}{% url 'issues:project_detail' project.pk %}{% endif %}"
-           class="btn btn-outline-light">
-            Cancel
-        </a>
-        <button type="submit" class="btn btn-primary">
-            {% if issue %}Save Changes{% else %}Create Issue{% endif %}
-        </button>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-submit text-white">
+                    {% if issue %}SAVE CHANGES{% else %}CREATE ISSUE{% endif %}
+                </button>
+                <a href="{% if issue %}{% url 'issues:issue_detail' issue.pk %}{% else %}{% url 'issues:project_detail' project.pk %}{% endif %}"
+                   class="btn btn-outline-light rounded-pill border-opacity-25">
+                    Cancel
+                </a>
+            </div>
+        </div>
     </div>
 </form>
 {% endblock %}

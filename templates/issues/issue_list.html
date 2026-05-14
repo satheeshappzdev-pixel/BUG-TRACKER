@@ -248,7 +248,7 @@
                                 </a>
                             </h6>
                         </div>
-                        <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark">
+                        <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark" style="width:175px">
                             {{ issue.get_status_display }}
                         </span>
                     </div>
