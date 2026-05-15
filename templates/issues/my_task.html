@@ -1,159 +1,144 @@
 {% extends "users/index.html" %}
 
-{% block title %}My Tasks - Bug Tracker{% endblock %}
-
-{% block nav_my_tasks_active %}active{% endblock %}
+{% block title %}Dashboard - {{ view_perspective }}{% endblock %}
 
 {% block extra_head %}
 <style>
-    body {
-        font-size: 0.875rem;
-        background: radial-gradient(circle at top right, #0a102e 0%, #050505 100%);
-    }
-
-    /* Glassmorphism Metric Cards */
-    .metric-card {
-        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px !important;
-        background: rgba(255, 255, 255, 0.05);
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.12) !important;
-        border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    /* Issue Card Design */
+    /* Card Uniformity */
     .issue-card {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
+        border-radius: 12px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         transition: all 0.2s ease;
     }
-    .issue-card:hover {
-        background: rgba(255, 255, 255, 0.07);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
+    .issue-card:hover { background: rgba(255, 255, 255, 0.06); }
 
-    .status-pill {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
+    /* Fixed Width Badges */
+    .status-badge-fixed {
+        width: 115px; 
+        text-align: center;
+        padding: 6px 0;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 800;
         text-transform: uppercase;
+        display: inline-block;
     }
 
-    .search-container {
-        background: rgba(0, 0, 0, 0.2);
+    /* Metric Cards Styling */
+    .metric-box {
+        background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
     }
+    .metric-box i { font-size: 20px; opacity: 0.8; }
+    .metric-box h3 { font-weight: 700; margin: 5px 0; }
+    .metric-label { font-size: 0.65rem; color: rgba(255,255,255,0.5); font-weight: 700; }
 </style>
 {% endblock %}
 
 {% block dashboard_content %}
-    {# Header & Search Section #}
-    <div class="row mb-4 align-items-center">
+    {# Header & Time Filters #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white fw-bold mb-0">{{ view_perspective }} Dashboard</h2>
+            <p class="text-white-50 small mb-0">Live status monitoring and task management.</p>
+        </div>
+        <div class="btn-group btn-group-sm bg-dark p-1 rounded-pill shadow-sm">
+            <a href="?date_filter=all&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'all' %}btn-primary text-white{% else %}text-white-50{% endif %}">All Time</a>
+            <a href="?date_filter=day&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'day' %}btn-primary text-white{% else %}text-white-50{% endif %}">Day</a>
+            <a href="?date_filter=week&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'week' %}btn-primary text-white{% else %}text-white-50{% endif %}">Week</a>
+            <a href="?date_filter=month&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'month' %}btn-primary text-white{% else %}text-white-50{% endif %}">Month</a>
+        </div>
+    </div>
+
+    {# Top Metric Row (All 5 Statuses) #}
+    <div class="row g-3 mb-4">
         <div class="col">
-            <h2 class="text-white fw-bold mb-1">My Tasks</h2>
-            <p class="text-white-50 small mb-0">Manage issues assigned directly to you.</p>
+            <div class="metric-box">
+                <i class="material-icons text-primary">analytics</i>
+                <h3 class="text-white">{{ metrics.total|default:0 }}</h3>
+                <div class="metric-label">TOTAL</div>
+            </div>
         </div>
-        <div class="col-auto d-flex align-items-center gap-2">
-            <form method="get" class="d-flex align-items-center gap-2">
-                <div class="input-group input-group-sm search-container">
-                    <input type="text" name="q" value="{{ search_query|default:'' }}" class="form-control bg-transparent border-0 text-white" placeholder="Search tasks...">
-                    <button class="btn border-0 text-white-50" type="submit"><span class="material-icons style-sm">search</span></button>
-                </div>
-                <select name="project" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()" style="width: 140px;">
-                    <option value="">All Projects</option>
-                    {% for p in projects %}
-                        <option value="{{ p.id }}" {% if selected_project_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
-                    {% endfor %}
-                </select>
-            </form>
+        <div class="col">
+            <div class="metric-box">
+                <i class="material-icons text-info">fiber_new</i>
+                <h3 class="text-white">{{ metrics.open|default:0 }}</h3>
+                <div class="metric-label">OPEN</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="metric-box">
+                <i class="material-icons text-success">fact_check</i>
+                <h3 class="text-white">{{ metrics.pending_qa|default:0 }}</h3>
+                <div class="metric-label">READY QA</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="metric-box">
+                <i class="material-icons text-warning">sync</i>
+                <h3 class="text-white">{{ metrics.in_progress|default:0 }}</h3>
+                <div class="metric-label">IN PROGRESS</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="metric-box">
+                <i class="material-icons text-danger">report_problem</i>
+                <h3 class="text-white">{{ metrics.critical|default:0 }}</h3>
+                <div class="metric-label">CRITICAL</div>
+            </div>
         </div>
     </div>
 
-    {# Top Metric Cards #}
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
-                <div class="metric-card p-3 text-center text-white   border-4">
-                    <span class="material-icons text-primary mb-1">assignment</span>
-                    <h3 class="fw-bold mb-0">{{ metrics.total|default:0 }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase">Total Tasks</p>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="metric-card p-3 text-center text-white  border-4">
-                    <span class="material-icons text-danger mb-1">priority_high</span>
-                    <h3 class="fw-bold mb-0">{{ metrics.high_priority|default:0 }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase">High Priority</p>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="metric-card p-3 text-center text-white  border-4">
-                    <span class="material-icons text-info mb-1">bolt</span>
-                    <h3 class="fw-bold mb-0">{{ metrics.open|default:0 }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase">Open</p>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="metric-card p-3 text-center text-white   border-4">
-                    <span class="material-icons text-warning mb-1">sync</span>
-                    <h3 class="fw-bold mb-0">{{ metrics.in_progress|default:0 }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase">In Progress</p>
-                </div>
-            </div>
-        </div>
-
-    {# Top Bar Status Tabs #}
+    {# Filter Buttons #}
     <div class="d-flex gap-2 mb-4 overflow-auto pb-2">
-        <a href="?project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">All</a>
-        <a href="?status=open&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">Open</a>
-        <a href="?status=in_progress&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'in_progress' %}btn-warning text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">In Progress</a>
-        <a href="?status=done&project={{ selected_project_id|default:'' }}" class="btn btn-sm {% if current_status == 'done' %}btn-success text-dark{% else %}btn-outline-secondary text-white{% endif %} rounded-pill px-3">Done</a>
+        <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
+        <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
+        <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
+        <a href="?status=in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">In Progress</a>
     </div>
 
-    {# Task List Grid #}
+    {# Issue List Grid #}
     <div class="row g-3">
         {% for issue in issues %}
-        <div class="col-12 col-md-6">
-            <div class="issue-card p-3 text-white">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <div class="text-primary small fw-bold mb-1">{{ issue.project.name }}</div>
-                        <h6 class="fw-bold mb-0">
-                            <a href="{% url 'issues:issue_detail' issue.pk %}" class="text-white text-decoration-none">
-                                {{ issue.project.code }}-{{ issue.pk }}: {{ issue.title }}
-                            </a>
-                        </h6>
+        <div class="col-12 col-md-6 d-flex align-items-stretch">
+            <div class="issue-card p-3 w-100">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <small class="text-primary fw-bold">{{ issue.project.code }}</small>
+                        <span class="status-badge-fixed 
+                            {% if issue.status == 'open' %}bg-info text-dark
+                            {% elif issue.status == 'ready_for_qa' %}bg-success text-dark
+                            {% elif issue.status == 'in_progress' %}bg-warning text-dark
+                            {% else %}bg-secondary text-white{% endif %}">
+                            {{ issue.get_status_display }}
+                        </span>
                     </div>
-                    <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark">
-                        {{ issue.get_status_display }}
-                    </span>
+                    <h6 class="text-white fw-bold mb-3">#{{ issue.pk }}: {{ issue.title }}</h6>
+                    <div class="badge bg-dark border border-secondary text-start w-100 p-2 fw-normal mb-3">
+                        <i class="material-icons align-middle smaller me-1" style="font-size: 14px;">account_circle</i>
+                        {% if view_perspective == 'QA' %}Assigned: {{ issue.assignee.get_full_name|default:issue.assignee.username }}{% else %}Reporter: {{ issue.reporter.get_full_name|default:issue.reporter.username }}{% endif %}
+                    </div>
                 </div>
-                
-                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="material-icons text-white-50" style="font-size: 16px;">history</span>
-                        <span class="text-white-50 smaller">{{ issue.updated_at|date:"M d" }}</span>
-                    </div>
-                    <div class="d-flex gap-2">
-                        {% if issue.can_edit %}
-                        <a href="{% url 'issues:issue_update' issue.pk %}" class="btn btn-sm btn-outline-light border-0 px-2 py-0">
-                            <span class="material-icons" style="font-size: 18px;">edit</span>
-                        </a>
-                        {% endif %}
-                        <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-0 px-3" style="font-size: 0.75rem;">VIEW</a>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
+                    <small class="text-white-50"><i class="material-icons align-middle me-1" style="font-size: 14px;">event</i>{{ issue.created_at|date:"M d" }}</small>
+                    <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary px-4 py-1" style="font-size: 0.75rem;">VIEW</a>
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col-12 text-center py-5">
-            <span class="material-icons fs-1 text-white-50">task_alt</span>
-            <p class="text-white-50 mt-2">No tasks found matching your criteria.</p>
+            <div class="p-5 bg-dark rounded-3 border border-secondary opacity-50">
+                <i class="material-icons fs-1 mb-2">assignment_turned_in</i>
+                <p class="mb-0">No tasks found for the selected filters.</p>
+            </div>
         </div>
         {% endfor %}
     </div>

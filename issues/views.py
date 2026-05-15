@@ -409,7 +409,10 @@ class IssueAddRemarkView(LoginRequiredMixin, View):
     def get(self, request, pk):
         return redirect('issues:issue_detail', pk=pk)
     
-
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
+from users.choices import TeamMemberRoleChoices
 
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
@@ -417,47 +420,59 @@ class MyIssueListView(LoginRequiredMixin, ListView):
     context_object_name = 'issues'
 
     def get_queryset(self):
-        # 1. Base Queryset for the logged in user
-        qs = Issue.objects.select_related('project', 'assignee', 'reporter').filter(
-            assignee=self.request.user
-        )
+        user = self.request.user
+        role = getattr(user.team_member, 'role', None)
         
-        # 2. Search Logic
-        search = self.request.GET.get('q')
-        if search:
-            qs = qs.filter(
-                Q(title__icontains=search)
-                | Q(description__icontains=search)
-                | Q(project__name__icontains=search)
-            )
-            
-        # 3. Status Filter Logic (Top Bar)
+        # Base Filter: QA sees reported + Ready for QA; Dev sees Assigned
+        if role == TeamMemberRoleChoices.QA:
+            qs = Issue.objects.filter(Q(reporter=user) | Q(status='ready_for_qa'))
+        else:
+            qs = Issue.objects.filter(assignee=user)
+
+        # Apply Time Filter
+        date_filter = self.request.GET.get('date_filter')
+        now = timezone.now()
+        if date_filter == 'day':
+            qs = qs.filter(created_at__gte=now - timedelta(days=1))
+        elif date_filter == 'week':
+            qs = qs.filter(created_at__gte=now - timedelta(weeks=1))
+        elif date_filter == 'month':
+            qs = qs.filter(created_at__gte=now - timedelta(days=30))
+
+        # Apply Status Filter
         status = self.request.GET.get('status')
         if status:
-            qs = qs.filter(status=status)
+            if status == 'pending_qa':
+                qs = qs.filter(status='ready_for_qa')
+            else:
+                qs = qs.filter(status=status)
             
-        # 4. Permission tagging
-        for issue in qs:
-            issue.can_edit = issue.is_authorized(self.request.user)
-            
-        return qs
+        return qs.select_related('project', 'assignee', 'reporter').distinct().order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+        role = getattr(user.team_member, 'role', None)
         
-        # Aggregated counts for the summary bar
-        user_issues = Issue.objects.filter(assignee=self.request.user)
-        context['summary'] = user_issues.aggregate(
+        context['view_perspective'] = 'QA' if role == TeamMemberRoleChoices.QA else 'Developer'
+        
+        # Summary Metrics (Calculated once for the role, ignoring current list filters)
+        if role == TeamMemberRoleChoices.QA:
+            base_metrics = Issue.objects.filter(Q(reporter=user) | Q(status='ready_for_qa'))
+        else:
+            base_metrics = Issue.objects.filter(assignee=user)
+
+        context['metrics'] = base_metrics.aggregate(
             total=Count('id'),
             open=Count('id', filter=Q(status='open')),
+            pending_qa=Count('id', filter=Q(status='ready_for_qa')),
             in_progress=Count('id', filter=Q(status='in_progress')),
-            done=Count('id', filter=Q(status='done'))
+            critical=Count('id', filter=Q(priority='high'))
         )
         
-        context['search'] = self.request.GET.get('q')
-        context['current_status'] = self.request.GET.get('status')
+        context['current_status'] = self.request.GET.get('status', '')
+        context['current_date_filter'] = self.request.GET.get('date_filter', 'all')
         return context
-    
 
 class TagListView(LoginRequiredMixin, View):
     def get(self, request):
