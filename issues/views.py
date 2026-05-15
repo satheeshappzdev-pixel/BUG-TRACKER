@@ -39,6 +39,15 @@ class ProjectListView(LoginRequiredMixin, ListView):
         return Project.objects.select_related('owner', 'team').all()
 
 
+
+
+from django.db.models import Count, Q
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
+from .models import Project, IssueStatusChoices
+
 class ProjectDetailView(LoginRequiredMixin, DetailView):
     model = Project
     template_name = 'issues/project_detail.html'
@@ -51,75 +60,88 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
         
-        # 1. Handle Time Filtering
+        # 1. Time Filtering Logic
         period = self.request.GET.get('period', 'all')
         now = timezone.now()
-        issues_qs = project.issues.select_related('assignee')
+        issues_qs = project.issues.select_related('assignee', 'reporter', 'assignee__team_member', 'reporter__team_member')
 
         if period == 'daily':
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            issues_qs = issues_qs.filter(created_at__gte=start_date)
+            filtered_qs = issues_qs.filter(created_at__gte=start_date)
         elif period == 'weekly':
             start_date = now - timedelta(days=7)
-            issues_qs = issues_qs.filter(created_at__gte=start_date)
+            filtered_qs = issues_qs.filter(created_at__gte=start_date)
+        else:
+            filtered_qs = issues_qs
 
-        # 2. Dynamic Annotation for all Statuses
+        # 2. Status Annotation Helper
+        status_choices = IssueStatusChoices.choices
         status_annotations = {
-            f"{status.lower()}_count": Count('id', filter=Q(status=status))
-            for status, label in IssueStatusChoices.choices
+            f"{status.lower()}_count": Count('id', filter=Q(status=status)) 
+            for status, label in status_choices
         }
 
-        # Added first_name and last_name to values()
-        member_summary_qs = issues_qs.values(
-            'assignee__username', 
-            'assignee__id',
-            'assignee__first_name',
-            'assignee__last_name'
+        # 3. Developer Summary (Grouped by Assignee)
+        dev_summary_qs = filtered_qs.values(
+            'assignee__username', 'assignee__id', 'assignee__first_name', 'assignee__last_name'
         ).annotate(
             total=Count('id'),
             high_priority=Count('id', filter=Q(priority='high')),
             **status_annotations
-        ).order_by('-total')
+        ).filter(
+            Q(assignee__team_member__role='developer') | Q(assignee__team_member__role__isnull=True)
+        ).exclude(assignee__team_member__role='qa').order_by('-total')
 
-        # Convert QuerySet to list to modify objects for the template
-        member_summary = list(member_summary_qs)
-
-        # 3. Data Transformation (Removing need for get_item tag)
-        for member in member_summary:
-            # --- Logic to create full name ---
-            first = member.get('assignee__first_name')
-            last = member.get('assignee__last_name')
-            if first and last:
-                member['full_display_name'] = f"{first} {last}"
-            elif first:
-                member['full_display_name'] = first
-            else:
-                member['full_display_name'] = member.get('assignee__username') or "Unassigned"
-            # ---------------------------------
-
-            counts_list = []
-            for status, label in IssueStatusChoices.choices:
-                key = f"{status.lower()}_count"
-                counts_list.append({
-                    'label': label,
-                    'count': member.get(key, 0),
-                    'slug': status.lower() # For CSS class mapping
-                })
-            member['status_counts_list'] = counts_list
-
-        # 4. Overall Metrics
-        metrics = issues_qs.aggregate(
+        # 4. QA Summary (Grouped by Reporter)
+        qa_summary_qs = filtered_qs.values(
+            'reporter__username', 'reporter__id', 'reporter__first_name', 'reporter__last_name'
+        ).annotate(
             total=Count('id'),
             high_priority=Count('id', filter=Q(priority='high')),
             **status_annotations
-        )
+        ).filter(reporter__team_member__role='qa').order_by('-total')
+
+        # 5. Transformation Logic
+        def process_summary(summary_qs, user_prefix, is_qa=False):
+            processed = []
+            for entry in summary_qs:
+                u_id = entry.get(f'{user_prefix}__id')
+                if not u_id: continue
+
+                # --- CUSTOM PENDING LOGIC ---
+                if is_qa:
+                    # For QA, "Pending" are issues THEY reported that are now READY FOR QA
+                    entry['pending_label'] = "Ready for QA"
+                    entry['total_pending_all_time'] = project.issues.filter(
+                        reporter_id=u_id, 
+                        status='ready_for_qa' # Slug from your IssueStatusChoices
+                    ).count()
+                else:
+                    # For Devs, "Pending" is their overall workload (not done/closed)
+                    entry['pending_label'] = "Total Workload"
+                    entry['total_pending_all_time'] = project.issues.filter(
+                        assignee_id=u_id
+                    ).exclude(status__in=['done', 'closed']).count()
+
+                # Name & Status Lists
+                first = entry.get(f'{user_prefix}__first_name')
+                last = entry.get(f'{user_prefix}__last_name')
+                entry['full_display_name'] = f"{first} {last}" if first and last else (first or entry.get(f'{user_prefix}__username'))
+                
+                entry['status_counts_list'] = [
+                    {'label': label, 'count': entry.get(f"{status.lower()}_count", 0), 'slug': status.lower()}
+                    for status, label in status_choices
+                ]
+                processed.append(entry)
+            return processed
 
         context.update({
-            'issues': issues_qs.order_by('-created_at')[:10],
-            'member_summary': member_summary,
-            'metrics': metrics,
+            'dev_summary': process_summary(dev_summary_qs, 'assignee', is_qa=False),
+            'qa_summary': process_summary(qa_summary_qs, 'reporter', is_qa=True),
+            'issues': filtered_qs.order_by('-created_at')[:10],
+            'metrics': filtered_qs.aggregate(total=Count('id'), high_priority=Count('id', filter=Q(priority='high')), **status_annotations),
             'current_period': period,
-            'status_choices': IssueStatusChoices.choices
+            'status_choices': status_choices
         })
         return context
 

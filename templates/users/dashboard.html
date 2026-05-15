@@ -176,7 +176,7 @@
 
                             <div class="flex-grow-1">
                                 <div class="text-white-50 small mb-1 d-flex align-items-center flex-wrap gap-2">
-                                    <span class="text-white fw-bold">{{ log.author.username }}</span> 
+                                    <span class="text-white fw-bold">{{ log.author.get_full_name }}</span> 
                                     <span>modified an issue in</span>
                                     <span class="badge bg-secondary" style="--bs-bg-opacity: .2;">{{ log.issue.project.name }}</span>
                                     
