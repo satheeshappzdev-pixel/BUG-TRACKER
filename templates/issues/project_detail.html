@@ -159,29 +159,60 @@
         {% include "issues/partials/_summary_table.html" with summary_data=qa_summary %}
     </div>
 
-    {# 5. Recent Issues #}
-    <h5 class="text-white fw-bold mb-3">Recent Issues</h5>
+{# 5. Recent Issues #}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="text-white fw-bold mb-0">Recent Issues</h5>
+        <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-primary text-decoration-none smaller">View All</a>
+    </div>
+    
     <div class="row g-3">
         {% for issue in issues %}
         <div class="col-12 col-md-6 col-xl-4">
-            <div class="issue-card p-3 d-flex flex-column">
+            <div class="issue-card glass-card p-3 d-flex flex-column h-100" style="border: 1px solid rgba(255,255,255,0.1);">
                 <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
-                    <h6 class="fw-bold mb-0 text-white text-truncate-2" title="{{ issue.title }}">
-                        #{{ issue.pk }}: {{ issue.title }}
-                    </h6>
-                    <span class="count-badge badge-{{ issue.status|lower }} flex-shrink-0" style="font-size: 0.65rem;">
+                    <div class="d-flex flex-column gap-1 overflow-hidden">
+                        {# Project Code-ID Badge #}
+                        <span class="badge issue-id-badge smaller align-self-start px-2 py-1">
+                            {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
+                        </span>
+                        <h6 class="fw-bold mb-0 text-white text-truncate-2 activity-link" title="{{ issue.title }}">
+                            {{ issue.title }}
+                        </h6>
+                    </div>
+                    
+                    {# Dynamic Status Badge #}
+                    <span class="badge flex-shrink-0 px-2 py-1 border 
+                        {% if issue.status == IssueStatusChoices.OPEN.value %}bg-info-subtle text-info border-info
+                        {% elif issue.status == IssueStatusChoices.DONE.value or issue.status == IssueStatusChoices.CLOSED.value %}bg-success-subtle text-success border-success
+                        {% else %}bg-warning-subtle text-warning border-warning{% endif %} border-opacity-25" 
+                        style="font-size: 0.65rem; --bs-bg-opacity: 0.1;">
                         {{ issue.get_status_display }}
                     </span>
                 </div>
                 
-                <div class="mt-auto">
-                    <div class="mb-2">
-                        <span class="badge {% if issue.priority == 'high' %}bg-danger{% elif issue.priority == 'medium' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} px-2 py-1" style="font-size: 0.65rem; text-transform: uppercase;">
-                            {{ issue.priority }}
+                <div class="mt-auto pt-2">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        {# Issue Type Badge #}
+                        <span class="badge smaller px-2 py-1 border 
+                            {% if issue.issue_type == IssueTypeChoices.BUG.value %}bg-danger-subtle text-danger border-danger
+                            {% elif issue.issue_type == IssueTypeChoices.TASK.value %}bg-info-subtle text-info border-info
+                            {% else %}bg-primary-subtle text-primary border-primary{% endif %} border-opacity-25" 
+                            style="font-size: 0.6rem;">
+                            {{ issue.get_issue_type_display }}
+                        </span>
+
+                        {# Priority Badge #}
+                        <span class="badge {% if issue.priority == IssuePriorityChoices.HIGH.value %}bg-danger{% elif issue.priority == IssuePriorityChoices.MEDIUM.value %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} px-2 py-1" 
+                              style="font-size: 0.6rem; text-transform: uppercase;">
+                            {{ issue.get_priority_display }}
                         </span>
                     </div>
-                    <div class="small text-white-50 pt-2 border-top border-secondary d-flex justify-content-between">
+
+                    <div class="small text-white-50 pt-2 border-top border-white-10 d-flex justify-content-between align-items-center">
                         <span>Assignee: <strong class="text-white">{{ issue.assignee.get_full_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
+                        <a href="{% url 'issues:issue_detail' issue.id %}" class="text-primary">
+                            <span class="material-icons" style="font-size: 16px;">open_in_new</span>
+                        </a>
                     </div>
                 </div>
             </div>

@@ -112,7 +112,11 @@
             <div class="issue-card p-3 w-100">
                 <div>
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <small class="text-primary fw-bold">{{ issue.project.code }}</small>
+                        {# Project Code - ID Badge #}
+                        <span class="badge bg-primary-subtle text-primary smaller px-2 py-1">
+                            {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
+                        </span>
+                        
                         <span class="status-badge-fixed 
                             {% if issue.status == 'open' %}bg-info text-dark
                             {% elif issue.status == 'ready_for_qa' %}bg-success text-dark
@@ -121,7 +125,10 @@
                             {{ issue.get_status_display }}
                         </span>
                     </div>
-                    <h6 class="text-white fw-bold mb-3">#{{ issue.pk }}: {{ issue.title }}</h6>
+
+                    {# Title adjusted to remove the duplicate PK display #}
+                    <h6 class="text-white fw-bold mb-3">{{ issue.title }}</h6>
+                    
                     <div class="badge bg-dark border border-secondary text-start p-2 fw-normal mb-3">
                         <i class="material-icons align-middle smaller me-1" style="font-size: 14px;">account_circle</i>
                         {% if view_perspective == 'QA' %}Assigned: {{ issue.assignee.get_full_name|default:issue.assignee.username }}{% else %}Reporter: {{ issue.reporter.get_full_name|default:issue.reporter.username }}{% endif %}
@@ -134,12 +141,6 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-12 text-center py-5">
-            <div class="p-5 bg-dark rounded-3 border border-secondary opacity-50">
-                <i class="material-icons fs-1 mb-2">assignment_turned_in</i>
-                <p class="mb-0">No tasks found for the selected filters.</p>
-            </div>
-        </div>
         {% endfor %}
     </div>
 {% endblock %}
