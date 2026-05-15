@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
+from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, TeamMemberRoleChoices
 
 from django.db.models import Q, Count
 from django.views.generic import ListView
@@ -176,17 +176,34 @@ class IssueListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').prefetch_related('tags')
 
-        search = self.request.GET.get('q')
+        search = self.request.GET.get('q', '').strip()
         if search:
-            qs = qs.filter(
+            # 1. Start with general text filters
+            query = (
                 Q(title__icontains=search)
                 | Q(description__icontains=search)
                 | Q(project__name__icontains=search)
                 | Q(assignee__username__icontains=search)
                 | Q(reporter__username__icontains=search)
                 | Q(tags__name__icontains=search)
-            ).distinct()
+            )
 
+            # 2. Handle the Project Label format (e.g., "PROJ-123")
+            if "-" in search:
+                parts = search.split("-")
+                prefix = parts[0]
+                suffix = parts[1]
+                if suffix.isdigit():
+                    query |= Q(project__code__iexact=prefix, pk=suffix)
+
+            # 3. Handle numeric searches (e.g., "123" or "#123")
+            clean_id = search.replace('#', '')
+            if clean_id.isdigit():
+                query |= Q(pk=clean_id)
+
+            qs = qs.filter(query).distinct()
+
+        # Status filtering
         status = self.request.GET.get('status')
         if status:
             qs = qs.filter(status=status)
@@ -409,11 +426,6 @@ class IssueAddRemarkView(LoginRequiredMixin, View):
     def get(self, request, pk):
         return redirect('issues:issue_detail', pk=pk)
     
-from django.db.models import Q, Count
-from django.utils import timezone
-from datetime import timedelta
-from users.choices import TeamMemberRoleChoices
-
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
@@ -423,9 +435,11 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         user = self.request.user
         role = getattr(user.team_member, 'role', None)
         
-        # Base Filter: QA sees reported + Ready for QA; Dev sees Assigned
+        # Filter logic: 
+        # QA only sees issues they reported.
+        # Developers only see issues assigned to them.
         if role == TeamMemberRoleChoices.QA:
-            qs = Issue.objects.filter(Q(reporter=user) | Q(status='ready_for_qa'))
+            qs = Issue.objects.filter(reporter=user)
         else:
             qs = Issue.objects.filter(assignee=user)
 
@@ -454,11 +468,11 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         user = self.request.user
         role = getattr(user.team_member, 'role', None)
         
-        context['view_perspective'] = 'QA' if role == TeamMemberRoleChoices.QA else 'Developer'
+        context['view_perspective'] = 'QA' if role == TeamMemberRoleChoices.QA else TeamMemberRoleChoices.DEVELOPER
         
-        # Summary Metrics (Calculated once for the role, ignoring current list filters)
+        # Summary Metrics (Must match the base filter logic in get_queryset)
         if role == TeamMemberRoleChoices.QA:
-            base_metrics = Issue.objects.filter(Q(reporter=user) | Q(status='ready_for_qa'))
+            base_metrics = Issue.objects.filter(reporter=user)
         else:
             base_metrics = Issue.objects.filter(assignee=user)
 
@@ -473,7 +487,7 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         context['current_status'] = self.request.GET.get('status', '')
         context['current_date_filter'] = self.request.GET.get('date_filter', 'all')
         return context
-
+    
 class TagListView(LoginRequiredMixin, View):
     def get(self, request):
         tags = Tag.objects.all()

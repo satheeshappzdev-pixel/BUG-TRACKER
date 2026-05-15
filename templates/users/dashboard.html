@@ -57,6 +57,16 @@
         font-size: 0.8rem;
         border-radius: 8px;
     }
+
+    .smaller { font-size: 0.7rem; }
+    
+    /* Issue ID Badge Styling */
+    .issue-id-badge {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
 </style>
 {% endblock %}
 
@@ -88,7 +98,7 @@
             </form>
             <div class="ms-2 d-none d-sm-inline-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary text-white small">
                 <span class="me-2">{{ request.user.username }}</span>
-                <span class="material-icons style-sm">account_circle</span>
+                <span class="material-icons style-sm" style="font-size: 18px;">account_circle</span>
             </div>
         </div>
     </div>
@@ -106,7 +116,7 @@
         </div>
 
         <div class="col-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.IN_PROGRESS.value }}&issue_type={{ IssueTypeChoices.TASK.value }}" class="text-decoration-none">
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.DEV_IN_PROGRESS.value }}" class="text-decoration-none">
                 <div class="metric-card glass-card p-3 h-100 text-center text-white">
                     <span class="material-icons text-success mb-2">task_alt</span>
                     <h3 class="fw-bold mb-0">{{ active_tasks }}</h3>
@@ -136,7 +146,7 @@
         </div>
     </div>
 
-    {# Status Grid - All Statuses #}
+    {# Status Grid #}
     <div class="row g-2 mb-4">
         {% for row in issue_status_stats %}
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
@@ -156,7 +166,7 @@
         {% endfor %}
     </div>
 
-{# Recent Activity #}
+    {# Recent Activity Section #}
     <div class="glass-card p-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="text-white fw-bold mb-0">Recent Activity</h5>
@@ -180,20 +190,49 @@
                                     <span>modified an issue in</span>
                                     <span class="badge bg-secondary" style="--bs-bg-opacity: .2;">{{ log.issue.project.name }}</span>
                                     
-                                    {# Status Change Indicator #}
-                                    {% if log.from_status or log.to_status %}
-                                        <div class="d-flex align-items-center ms-auto bg-dark px-2 py-1 rounded" style="font-size: 0.7rem;">
-                                            <span class="text-white-50">{{ log.from_status|default:"New" }}</span>
-                                            <span class="material-icons mx-1" style="font-size: 10px;">arrow_forward</span>
-                                            <span class="text-info fw-bold">{{ log.to_status }}</span>
+                                    {# Correct Status Change Indicator using CBV properties #}
+                                    {% if log.to_status %}
+                                        <div class="d-inline-flex align-items-center ms-auto bg-dark px-2 py-1 rounded shadow-sm border border-secondary border-opacity-25" style="font-size: 0.7rem;">
+                                            
+                                            {% if log.from_status %}
+                                                <span class="text-white-50">
+                                                    {{ log.from_status_label }}
+                                                </span>
+                                                <span class="material-icons mx-1 text-secondary" style="font-size: 10px;">arrow_forward</span>
+                                            {% endif %}
+                                            
+                                            <span class="fw-bold text-{% if log.to_status == IssueStatusChoices.OPEN.value %}info{% elif log.to_status == IssueStatusChoices.DONE.value or log.to_status == IssueStatusChoices.CLOSED.value %}success{% else %}warning{% endif %}">
+                                                {{ log.to_status_label }}
+                                            </span>
                                         </div>
                                     {% endif %}
                                 </div>
 
-                                <a href="{% url 'issues:issue_detail' log.issue.id %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}" 
-                                   class="text-white text-decoration-none activity-link fw-semibold d-block">
-                                    {{ log.issue.title }}
-                                </a>
+                                {# Issue ID Badge, Type Badge, and Title #}
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    {# Project Code - ID Badge #}
+                                    <span class="badge issue-id-badge smaller px-2 py-1">
+                                        {% if log.issue.project.code %}{{ log.issue.project.code }}-{{ log.issue.pk }}{% else %}#{{ log.issue.pk }}{% endif %}
+                                    </span>
+                                    
+                                    {# Issue Type Badge using CBV logic for Label and Color #}
+                                    <span class="badge smaller px-2 py-1 border 
+                                        {% if log.issue.issue_type == IssueTypeChoices.BUG.value %}
+                                            bg-danger-subtle text-danger border-danger border-opacity-25
+                                        {% elif log.issue.issue_type == IssueTypeChoices.TASK.value %}
+                                            bg-info-subtle text-info border-info border-opacity-25
+                                        {% else %}
+                                            bg-primary-subtle text-primary border-primary border-opacity-25
+                                        {% endif %}">
+                                        {{ log.type_label }}
+                                    </span>
+
+                                    <a href="{% url 'issues:issue_detail' log.issue.id %}" 
+                                       class="text-white text-decoration-none activity-link fw-semibold">
+                                        <span class="text-info fw-normal"></span>
+                                        {{ log.issue.title }}
+                                    </a>
+                                </div>
 
                                 {% if log.remark %}
                                     <div class="text-white-50 small fst-italic mt-1 border-start border-primary border-2 ps-2" style="--bs-text-opacity: .7;">

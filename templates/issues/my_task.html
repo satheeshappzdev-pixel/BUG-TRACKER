@@ -122,7 +122,7 @@
                         </span>
                     </div>
                     <h6 class="text-white fw-bold mb-3">#{{ issue.pk }}: {{ issue.title }}</h6>
-                    <div class="badge bg-dark border border-secondary text-start w-100 p-2 fw-normal mb-3">
+                    <div class="badge bg-dark border border-secondary text-start p-2 fw-normal mb-3">
                         <i class="material-icons align-middle smaller me-1" style="font-size: 14px;">account_circle</i>
                         {% if view_perspective == 'QA' %}Assigned: {{ issue.assignee.get_full_name|default:issue.assignee.username }}{% else %}Reporter: {{ issue.reporter.get_full_name|default:issue.reporter.username }}{% endif %}
                     </div>

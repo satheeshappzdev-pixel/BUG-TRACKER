@@ -24,7 +24,6 @@ import sqlite3
 import os
 from django.db import models
 
-
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'users/dashboard.html'
 
@@ -37,67 +36,65 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['selected_project_id'] = project_id
         context['selected_source'] = source
 
-        if project_id:
-            issues_qs = Issue.objects.filter(project_id=project_id)
-            recent_activities_qs = IssueRemarkLog.objects.select_related('issue', 'author').filter(
-                issue__project_id=project_id,
-            )
-        else:
-            issues_qs = Issue.objects.all()
-            recent_activities_qs = IssueRemarkLog.objects.select_related('issue', 'author').all()
+        # 1. Base Querysets
+        recent_activities_qs = IssueRemarkLog.objects.select_related(
+            'issue', 'author', 'issue__project'
+        )
+        issues_qs = Issue.objects.all()
 
+        # 2. Filtering Logic
+        if project_id:
+            issues_qs = issues_qs.filter(project_id=project_id)
+            recent_activities_qs = recent_activities_qs.filter(issue__project_id=project_id)
+        
         if source == 'MINE':
             issues_qs = issues_qs.filter(assignee=self.request.user)
             recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user)
 
-        context['active_bugs'] = issues_qs.filter(
-            status=IssueStatusChoices.OPEN,
-        ).count()
+        # 3. Process Recent Activities (Pre-mapping labels for HTML)
+        status_map = {c.value: c.label for c in IssueStatusChoices}
+        type_map = {t.value: t.label for t in IssueTypeChoices}
+        
+        activities = recent_activities_qs.order_by('-created_at')[:10]
+        
+        for log in activities:
+            # Map raw strings to human-readable labels
+            log.from_status_label = status_map.get(log.from_status, log.from_status)
+            log.to_status_label = status_map.get(log.to_status, log.to_status)
+            log.type_label = type_map.get(log.issue.issue_type, log.issue.issue_type)
 
-        # Progressing tasks = Dev In Progress OR QA In Progress with assignee set
+        context['recent_activities'] = activities
+
+        # 4. Dashboard Metrics
+        context['active_bugs'] = issues_qs.filter(status=IssueStatusChoices.OPEN).count()
         context['active_tasks'] = issues_qs.filter(
             models.Q(status=IssueStatusChoices.DEV_IN_PROGRESS) |
             models.Q(status=IssueStatusChoices.QA_IN_PROGRESS),
-            assignee__isnull=False,
+            assignee__isnull=False
         ).count()
-
         context['high_priority_bugs'] = issues_qs.filter(
-            status=IssueStatusChoices.OPEN,
-            priority=IssuePriorityChoices.HIGH,
+            status=IssueStatusChoices.OPEN, priority=IssuePriorityChoices.HIGH
         ).count()
-
         context['my_open_issues'] = issues_qs.filter(
-            status=IssueStatusChoices.OPEN,
-            assignee=self.request.user,
+            status=IssueStatusChoices.OPEN, assignee=self.request.user
         ).count()
 
-        context['recent_activities'] = recent_activities_qs.order_by('-created_at')[:10]
-
-        raw_status_stats = (
-            issues_qs
-            .values('status')
-            .order_by('status')
-            .annotate(count=Count('id'))
-        )
-        status_count_map = {item['status']: item['count'] for item in raw_status_stats}
-
+        # 5. Status Grid Stats
+        raw_status_stats = issues_qs.values('status').annotate(count=Count('id'))
+        count_map = {item['status']: item['count'] for item in raw_status_stats}
         context['issue_status_stats'] = [
-            {
-                'value': choice.value,
-                'label': choice.label,
-                'count': status_count_map.get(choice.value, 0),
-            }
-            for choice in IssueStatusChoices
+            {'value': c.value, 'label': c.label, 'count': count_map.get(c.value, 0)}
+            for c in IssueStatusChoices
         ]
 
-        # expose enums so template can use their .value
+        # 6. Pass Enums for HTML logic comparisons
         context['IssueStatusChoices'] = IssueStatusChoices
-        context['IssuePriorityChoices'] = IssuePriorityChoices
         context['IssueTypeChoices'] = IssueTypeChoices
+        context['IssuePriorityChoices'] = IssuePriorityChoices
 
         return context
-
-
+    
+    
 class TeamListView(LoginRequiredMixin, ListView):
     model = Team
     template_name = 'users/team_list.html'
