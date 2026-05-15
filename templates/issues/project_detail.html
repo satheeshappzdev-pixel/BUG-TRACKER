@@ -184,7 +184,7 @@
                     <span class="badge flex-shrink-0 px-2 py-1 border 
                         {% if issue.status == IssueStatusChoices.OPEN.value %}bg-info-subtle text-info border-info
                         {% elif issue.status == IssueStatusChoices.DONE.value or issue.status == IssueStatusChoices.CLOSED.value %}bg-success-subtle text-success border-success
-                        {% else %}bg-warning-subtle text-warning border-warning{% endif %} border-opacity-25" 
+                        {% else %} text-warning border-warning{% endif %} border-opacity-25" 
                         style="font-size: 0.65rem; --bs-bg-opacity: 0.1;">
                         {{ issue.get_status_display }}
                     </span>

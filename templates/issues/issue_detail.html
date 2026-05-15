@@ -219,24 +219,15 @@
             <form method="post" action="{% url 'issues:issue_add_remark' issue.pk %}" class="mb-5">
                 {% csrf_token %}
                 {{ remark_form.issue.as_hidden }}
-
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-white-50 small" for="{{ remark_form.to_status.id_for_label }}">New Status</label>
-                        {{ remark_form.to_status }}
-                    </div>
                     <div class="col-12 mb-3">
                         <label class="form-label text-white-50 small" for="{{ remark_form.remark.id_for_label }}">Remark</label>
                         {{ remark_form.remark }}
                     </div>
-                    <div class="col-12 mb-4">
-                        <label class="form-label text-white-50 small" for="{{ remark_form.qa_note.id_for_label }}">QA Note</label>
-                        {{ remark_form.qa_note }}
-                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm fw-bold border-0">
-                    <span class="material-icons fs-6 me-1 align-middle">send</span> Add Log Entry
+                    <span class="material-icons fs-6 me-1 align-middle">send</span> Add Discussion
                 </button>
             </form>
 
@@ -254,14 +245,6 @@
                                     {{ log.created_at|date:"M d, Y H:i" }}
                                 </div>
                             </div>
-                            
-                            {% if log.from_status or log.to_status %}
-                                <div class="mb-2">
-                                    <span class="badge bg-secondary opacity-50 px-2 py-1 smaller">{{ log.get_from_status_display|default:"-" }}</span>
-                                    <span class="mx-2 text-white-50">→</span>
-                                    <span class="badge bg-info text-dark px-2 py-1 smaller">{{ log.get_to_status_display|default:"-" }}</span>
-                                </div>
-                            {% endif %}
 
                             {% if log.remark %}
                                 <div class="text-white small mb-1 opacity-75">
