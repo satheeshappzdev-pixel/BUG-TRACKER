@@ -75,22 +75,30 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         }
 
         # 3. Developer Summary (Grouped by Assignee)
+        # Filters for High/Critical priority and excludes completed/QA statuses
         dev_summary_qs = filtered_qs.values(
             'assignee__username', 'assignee__id', 'assignee__first_name', 'assignee__last_name'
         ).annotate(
             total=Count('id'),
-            high_priority=Count('id', filter=Q(priority='high')),
+            high_priority=Count(
+                'id', 
+                filter=Q(priority__in=['high', 'critical']) & ~Q(status__in=['done', 'closed', 'ready_for_qa', 'qa_in_progress', 'rejected'])
+            ),
             **status_annotations
         ).filter(
             Q(assignee__team_member__role='developer') | Q(assignee__team_member__role__isnull=True)
         ).exclude(assignee__team_member__role='qa').order_by('-total')
 
         # 4. QA Summary (Grouped by Reporter)
+        # Filters for High/Critical priority issues reported by them that are ready_for_qa
         qa_summary_qs = filtered_qs.values(
             'reporter__username', 'reporter__id', 'reporter__first_name', 'reporter__last_name'
         ).annotate(
             total=Count('id'),
-            high_priority=Count('id', filter=Q(priority='high')),
+            high_priority=Count(
+                'id', 
+                filter=Q(priority__in=['high', 'critical'], status='ready_for_qa')
+            ),
             **status_annotations
         ).filter(reporter__team_member__role='qa').order_by('-total')
 
@@ -103,17 +111,19 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
 
                 # --- CUSTOM PENDING LOGIC ---
                 if is_qa:
-                    # For QA, "Pending" are issues THEY reported that are now READY FOR QA
-                    entry['pending_label'] = "Ready for QA"
+                    # For QA, "Pending" are high/critical priority issues THEY reported that are now READY FOR QA
+                    entry['pending_label'] = "Ready for QA (High/Critical)"
                     entry['total_pending_all_time'] = project.issues.filter(
                         reporter_id=u_id, 
-                        status='ready_for_qa' # Slug from your IssueStatusChoices
+                        status='ready_for_qa',
+                        priority__in=['high', 'critical']
                     ).count()
                 else:
-                    # For Devs, "Pending" is their overall workload (not done/closed)
-                    entry['pending_label'] = "Total Workload"
+                    # For Devs, "Pending" is their overall high/critical priority workload (not done/closed)
+                    entry['pending_label'] = "Total Workload (High/Critical)"
                     entry['total_pending_all_time'] = project.issues.filter(
-                        assignee_id=u_id
+                        assignee_id=u_id,
+                        priority__in=['high', 'critical']
                     ).exclude(status__in=['done', 'closed', 'ready_for_qa', 'qa_in_progress', 'rejected']).count()
 
                 # Name & Status Lists
@@ -132,7 +142,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
             'dev_summary': process_summary(dev_summary_qs, 'assignee', is_qa=False),
             'qa_summary': process_summary(qa_summary_qs, 'reporter', is_qa=True),
             'issues': filtered_qs.order_by('-created_at')[:10],
-            'metrics': filtered_qs.aggregate(total=Count('id'), high_priority=Count('id', filter=Q(priority='high')), **status_annotations),
+            'metrics': filtered_qs.aggregate(total=Count('id'), high_priority=Count('id', filter=Q(priority__in=['high', 'critical'])), **status_annotations),
             'current_period': period,
             'status_choices': status_choices
         })
