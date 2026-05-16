@@ -7,7 +7,7 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from issues.choices import IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
 from issues.models import Issue, IssueRemarkLog, Project
 
@@ -23,7 +23,6 @@ from django.views.generic import View
 import sqlite3
 import os
 from django.db import models
-
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'users/dashboard.html'
 
@@ -31,6 +30,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         project_id = self.request.GET.get('project')
         source = self.request.GET.get('source', 'ALL')
+        page_number = self.request.GET.get('page', 1)  # Get current page number
 
         context['projects'] = Project.objects.all()
         context['selected_project_id'] = project_id
@@ -39,7 +39,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # 1. Base Querysets
         recent_activities_qs = IssueRemarkLog.objects.select_related(
             'issue', 'author', 'issue__project'
-        )
+        ).order_by('-created_at')
+        
         issues_qs = Issue.objects.all()
 
         # 2. Filtering Logic
@@ -51,21 +52,28 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             issues_qs = issues_qs.filter(assignee=self.request.user)
             recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user)
 
-        # 3. Process Recent Activities (Pre-mapping labels for HTML)
+        # 3. Pagination Configuration (10 activities per page)
+        paginator = Paginator(recent_activities_qs, 10)
+        try:
+            activities_page = paginator.page(page_number)
+        except PageNotAnInteger:
+            activities_page = paginator.page(1)
+        except EmptyPage:
+            activities_page = paginator.page(paginator.num_pages)
+
+        # 4. Process Recent Activities (Pre-mapping labels for HTML)
         status_map = {c.value: c.label for c in IssueStatusChoices}
         type_map = {t.value: t.label for t in IssueTypeChoices}
         
-        activities = recent_activities_qs.order_by('-created_at')[:10]
-        
-        for log in activities:
+        for log in activities_page:
             # Map raw strings to human-readable labels
             log.from_status_label = status_map.get(log.from_status, log.from_status)
             log.to_status_label = status_map.get(log.to_status, log.to_status)
             log.type_label = type_map.get(log.issue.issue_type, log.issue.issue_type)
 
-        context['recent_activities'] = activities
+        context['recent_activities'] = activities_page  # Passes Page Object
 
-        # 4. Dashboard Metrics
+        # 5. Dashboard Metrics
         context['active_bugs'] = issues_qs.filter(status=IssueStatusChoices.OPEN).count()
         context['active_tasks'] = issues_qs.filter(
             models.Q(status=IssueStatusChoices.DEV_IN_PROGRESS) |
@@ -79,7 +87,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             status=IssueStatusChoices.OPEN, assignee=self.request.user
         ).count()
 
-        # 5. Status Grid Stats
+        # 6. Status Grid Stats
         raw_status_stats = issues_qs.values('status').annotate(count=Count('id'))
         count_map = {item['status']: item['count'] for item in raw_status_stats}
         context['issue_status_stats'] = [
@@ -87,7 +95,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             for c in IssueStatusChoices
         ]
 
-        # 6. Pass Enums for HTML logic comparisons
+        # 7. Pass Enums for HTML logic comparisons
         context['IssueStatusChoices'] = IssueStatusChoices
         context['IssueTypeChoices'] = IssueTypeChoices
         context['IssuePriorityChoices'] = IssuePriorityChoices

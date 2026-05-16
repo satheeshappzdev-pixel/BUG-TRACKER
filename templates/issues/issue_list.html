@@ -11,6 +11,33 @@
         font-size: 0.875rem;
     }
 
+    /* Layout Split Logic: Scrollable Container System */
+    .sticky-top-section {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: #111424; /* Update matches your layout background */
+        padding-bottom: 0.5rem;
+    }
+
+    .scrollable-issues-region {
+        max-height: calc(100vh - 440px); /* Adjust based on your header sizes */
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    /* Custom Scrollbar for better UI blend */
+    .scrollable-issues-region::-webkit-scrollbar {
+        width: 6px;
+    }
+    .scrollable-issues-region::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .scrollable-issues-region::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+    }
+
     /* Metric Cards Pattern for Stats */
     .metric-card {
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
@@ -83,345 +110,295 @@
 {% endblock %}
 
 {% block dashboard_content %}
-{# Header Section #}
-<div class="row mb-4 align-items-center">
-    <div class="col">
-        <h2 class="text-white fw-bold mb-1">Issues</h2>
-        <p class="text-white-50 small mb-0">Browse and manage issues across all projects.</p>
+<div class="sticky-top-section">
+    {# Header Section #}
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="text-white fw-bold mb-1">Issues</h2>
+            <p class="text-white-50 small mb-0">Browse and manage issues across all projects.</p>
+        </div>
     </div>
-</div>
 
-{# 1. Metric Summary Cards (Logic from Dashboard) #}
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="metric-card p-3 text-center text-white border-4">
-            <span class="material-icons text-primary mb-1">assignment</span>
-            <h3 class="fw-bold mb-0">{{ metrics.total|default:issues.count }}</h3>
-            <p class="small mb-0 opacity-50 text-uppercase">Total Issues</p>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="metric-card p-3 text-center text-white border-4">
-            <span class="material-icons text-danger mb-1">priority_high</span>
-            <h3 class="fw-bold mb-0">{{ metrics.high_priority|default:0 }}</h3>
-            <p class="small mb-0 opacity-50 text-uppercase">Critical / High</p>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="metric-card p-3 text-center text-white border-4">
-            <span class="material-icons text-info mb-1">bolt</span>
-            <h3 class="fw-bold mb-0">{{ metrics.open|default:0 }}</h3>
-            <p class="small mb-0 opacity-50 text-uppercase">Open</p>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="metric-card p-3 text-center text-white border-4">
-            <span class="material-icons text-warning mb-1">sync</span>
-            <h3 class="fw-bold mb-0">{{ metrics.in_progress|default:0 }}</h3>
-            <p class="small mb-0 opacity-50 text-uppercase">In Progress</p>
-        </div>
-    </div>
-</div>
-
-{# 2. Extensive Multi-Filter Section #}
-<div class="metric-card p-4 mb-4">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-4 col-12">
-            <label class="text-white-50 small mb-1">Search</label>
-            <div class="input-group input-group-sm search-container-refined p-1">
-                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
-                       class="form-control bg-transparent border-0 text-white shadow-none" 
-                       placeholder="Title, project, code, reporter...">
-                <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3">
-                    <span class="material-icons style-sm">search</span>
-                </button>
+    {# 1. Metric Summary Cards #}
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3">
+            <div class="metric-card p-3 text-center text-white border-4">
+                <span class="material-icons text-primary mb-1">assignment</span>
+                <h3 class="fw-bold mb-0">{{ paginator.count|default:issues.count }}</h3>
+                <p class="small mb-0 opacity-50 text-uppercase">Total Issues</p>
             </div>
         </div>
-
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Project</label>
-            <select name="project" class="form-select form-select-sm filter-control">
-                <option value="">All Projects</option>
-                {% for project in projects %}
-                    <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                {% endfor %}
-            </select>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card p-3 text-center text-white border-4">
+                <span class="material-icons text-danger mb-1">priority_high</span>
+                <h3 class="fw-bold mb-0">{{ metrics.high_priority|default:0 }}</h3>
+                <p class="small mb-0 opacity-50 text-uppercase">Critical / High</p>
+            </div>
         </div>
-
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Status</label>
-            <select name="status" class="form-select form-select-sm filter-control">
-                <option value="">All Statuses</option>
-                {% for value, label in IssueStatusChoices.choices %}
-                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card p-3 text-center text-white border-4">
+                <span class="material-icons text-info mb-1">bolt</span>
+                <h3 class="fw-bold mb-0">{{ metrics.open|default:0 }}</h3>
+                <p class="small mb-0 opacity-50 text-uppercase">Open</p>
+            </div>
         </div>
-
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Priority</label>
-            <select name="priority" class="form-select form-select-sm filter-control">
-                <option value="">All Priorities</option>
-                {% for value, label in IssuePriorityChoices.choices %}
-                    <option value="{{ value }}" {% if request.GET.priority == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
+        <div class="col-6 col-lg-3">
+            <div class="metric-card p-3 text-center text-white border-4">
+                <span class="material-icons text-warning mb-1">sync</span>
+                <h3 class="fw-bold mb-0">{{ metrics.in_progress|default:0 }}</h3>
+                <p class="small mb-0 opacity-50 text-uppercase">In Progress</p>
+            </div>
         </div>
+    </div>
 
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Type</label>
-            <select name="issue_type" class="form-select form-select-sm filter-control">
-                <option value="">All Types</option>
-                {% for value, label in IssueTypeChoices.choices %}
-                    <option value="{{ value }}" {% if request.GET.issue_type == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    {# 2. Extensive Multi-Filter Section #}
+    <div class="metric-card p-3 mb-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4 col-12">
+                <label class="text-white-50 small mb-1">Search</label>
+                <div class="input-group input-group-sm search-container-refined p-1">
+                    <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
+                           class="form-control bg-transparent border-0 text-white shadow-none" 
+                           placeholder="Title, project, code, reporter...">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3">
+                        <span class="material-icons style-sm">search</span>
+                    </button>
+                </div>
+            </div>
 
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Environment</label>
-            <select name="environment" class="form-select form-select-sm filter-control">
-                <option value="">All</option>
-                {% for value, label in IssueEnvironmentChoices.choices %}
-                    <option value="{{ value }}" {% if request.GET.environment == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Project</label>
+                <select name="project" class="form-select form-select-sm filter-control">
+                    <option value="">All Projects</option>
+                    {% for project in projects %}
+                        <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Assignee</label>
-            <select name="assignee" class="form-select form-select-sm filter-control">
-                <option value="">All</option>
-                {% for user in assignees %}
-                    <option value="{{ user.id }}" {% if request.GET.assignee == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm filter-control">
+                    <option value="">All Statuses</option>
+                    {% for value, label in IssueStatusChoices.choices %}
+                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Reporter</label>
-            <select name="reporter" class="form-select form-select-sm filter-control">
-                <option value="">All</option>
-                {% for user in reporters %}
-                    <option value="{{ user.id }}" {% if request.GET.reporter == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Priority</label>
+                <select name="priority" class="form-select form-select-sm filter-control">
+                    <option value="">All Priorities</option>
+                    {% for value, label in IssuePriorityChoices.choices %}
+                        <option value="{{ value }}" {% if request.GET.priority == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="col-md-2 col-sm-6">
-            <label class="text-white-50 small mb-1">Related Issue</label>
-            <select name="related_filter" class="form-select form-select-sm filter-control">
-                <option value="">Any</option>
-                <option value="has" {% if request.GET.related_filter == 'has' %}selected{% endif %}>Has Related</option>
-                <option value="none" {% if request.GET.related_filter == 'none' %}selected{% endif %}>No Related</option>
-            </select>
-        </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Type</label>
+                <select name="issue_type" class="form-select form-select-sm filter-control">
+                    <option value="">All Types</option>
+                    {% for value, label in IssueTypeChoices.choices %}
+                        <option value="{{ value }}" {% if request.GET.issue_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="col-md-4 col-sm-12 d-flex gap-2">
-            <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Apply Filters</button>
-            <a href="{% url 'issues:issue_list' %}" class="btn btn-sm btn-outline-secondary text-white px-3">
-                <span class="material-icons fs-6 align-middle">refresh</span>
-            </a>
-        </div>
-    </form>
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Environment</label>
+                <select name="environment" class="form-select form-select-sm filter-control">
+                    <option value="">All</option>
+                    {% for value, label in IssueEnvironmentChoices.choices %}
+                        <option value="{{ value }}" {% if request.GET.environment == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Assignee</label>
+                <select name="assignee" class="form-select form-select-sm filter-control">
+                    <option value="">All</option>
+                    {% for user in assignees %}
+                        <option value="{{ user.id }}" {% if request.GET.assignee == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Reporter</label>
+                <select name="reporter" class="form-select form-select-sm filter-control">
+                    <option value="">All</option>
+                    {% for user in reporters %}
+                        <option value="{{ user.id }}" {% if request.GET.reporter == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6">
+                <label class="text-white-50 small mb-1">Related Issue</label>
+                <select name="related_filter" class="form-select form-select-sm filter-control">
+                    <option value="">Any</option>
+                    <option value="has" {% if request.GET.related_filter == 'has' %}selected{% endif %}>Has Related</option>
+                    <option value="none" {% if request.GET.related_filter == 'none' %}selected{% endif %}>No Related</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 col-sm-12 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Apply Filters</button>
+                <a href="{% url 'issues:issue_list' %}" class="btn btn-sm btn-outline-secondary text-white px-3">
+                    <span class="material-icons fs-6 align-middle">refresh</span>
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 
-{# 3. Issues Grid with Detailed Metadata #}
-{% if issues %}
-<div class="row g-3">
-    {% for issue in issues %}
-        <div class="col-12">
-            <div class="issue-card p-3 text-white position-relative" style="transition: all 0.2s ease-in-out;">
-                {# Visual Status Accent Line #}
-                <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == 'done' %}success{% elif issue.priority == 'critical' %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
-                
-                {# Main Container (Non-Expanded View Context) #}
-                <div class="ms-2">
+<div class="scrollable-issues-region mt-2">
+    {% if issues %}
+    <div class="row g-3">
+        {% for issue in issues %}
+            <div class="col-12">
+                <div class="issue-card p-3 text-white position-relative" style="transition: all 0.2s ease-in-out;">
+                    <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == 'done' %}success{% elif issue.priority == 'critical' %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
                     
-                    {# Top Row: Project info, Title, Status, and Toggle Trigger #}
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
-                         data-bs-toggle="collapse" 
-                         data-bs-target="#collapseIssue{{ issue.pk }}" 
-                         style="cursor: pointer;"
-                         role="button"
-                         aria-expanded="false" 
-                         aria-controls="collapseIssue{{ issue.pk }}">
-                        
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                                <span class="text-primary smaller fw-bold uppercase tracking-wider">{{ issue.project.name }}</span>
-                                <span class="text-white-50 small">/</span>
-                                <span class="text-white-50 smaller">
-                                    {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
+                    <div class="ms-2">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
+                             data-bs-toggle="collapse" 
+                             data-bs-target="#collapseIssue{{ issue.pk }}" 
+                             style="cursor: pointer;"
+                             role="button"
+                             aria-expanded="false" 
+                             aria-controls="collapseIssue{{ issue.pk }}">
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                    <span class="text-primary smaller fw-bold uppercase tracking-wider">{{ issue.project.name }}</span>
+                                    <span class="text-white-50 small">/</span>
+                                    <span class="text-white-50 smaller">
+                                        {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
+                                    </span>
+                                    <span class="badge bg-primary-subtle text-primary smaller px-2 py-0 border border-primary border-opacity-25" style="font-size: 0.65rem;">
+                                        {{ issue.get_issue_type_display }}
+                                    </span>
+                                    <span class="badge bg-secondary smaller opacity-75 ms-1">{{ issue.get_priority_display }} Priority</span>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-white">
+                                    {{ issue.title }}
+                                </h6>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
+                                <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark text-center" style="width:160px; display: inline-block;">
+                                    {{ issue.get_status_display }}
                                 </span>
-                                <span class="badge bg-primary-subtle text-primary smaller px-2 py-0 border border-primary border-opacity-25" style="font-size: 0.65rem;">
-                                    {{ issue.get_issue_type_display }}
-                                </span>
-                                <span class="badge bg-secondary smaller opacity-75 ms-1">{{ issue.get_priority_display }} Priority</span>
+                                <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
                             </div>
-                            <h6 class="fw-bold mb-0 text-white">
-                                {{ issue.title }}
-                            </h6>
                         </div>
 
-                        <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
-                            <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark text-center" style="width:160px; display: inline-block;">
-                                {{ issue.get_status_display }}
-                            </span>
-                            {# Chevron indicator #}
-                            <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
+                        <div class="mb-2 d-flex flex-wrap gap-1">
+                            {% for tag in issue.tags.all %}
+                                <span class="issue-tag-pill">{{ tag.name }}</span>
+                            {% empty %}
+                                <span class="text-white-50 smaller italic opacity-50">No tags</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center gap-y-1 smaller text-white-50 pt-1" style="column-gap: 1.25rem !important;">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-primary" style="font-size: 0.95rem;">person</span>
+                                <span>Assignee: <strong class="text-white">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-info" style="font-size: 0.95rem;">campaign</span>
+                                <span>Reporter: <strong class="text-white">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-warning" style="font-size: 0.95rem;">layers</span>
+                                <span>Env: <strong class="text-white">{{ issue.get_environment_display }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-success" style="font-size: 0.95rem;">schedule</span>
+                                <span>Updated: <strong class="text-white">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
+                            </div>
                         </div>
                     </div>
 
-                    {# Detailing: Tags (Visible in non-expanded view) #}
-                    <div class="mb-2 d-flex flex-wrap gap-1">
-                        {% for tag in issue.tags.all %}
-                            <span class="issue-tag-pill">{{ tag.name }}</span>
-                        {% empty %}
-                            <span class="text-white-50 smaller italic opacity-50">No tags</span>
-                        {% endfor %}
-                    </div>
-
-                    {# Unified Single-Line Metadata Bar (Visible in non-expanded view) #}
-                    <div class="d-flex flex-wrap align-items-center gap-y-1 smaller text-white-50 pt-1" style="column-gap: 1.25rem !important;">
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-primary" style="font-size: 0.95rem;">person</span>
-                            <span>Assignee: <strong class="text-white">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-info" style="font-size: 0.95rem;">campaign</span>
-                            <span>Reporter: <strong class="text-white">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-warning" style="font-size: 0.95rem;">layers</span>
-                            <span>Env: <strong class="text-white">{{ issue.get_environment_display }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-success" style="font-size: 0.95rem;">schedule</span>
-                            <span>Updated: <strong class="text-white">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-secondary" style="font-size: 0.95rem;">hourglass_empty</span>
-                            <span>Estimate: <strong class="text-white">{% if issue.time_estimate_hours %}{{ issue.time_estimate_hours }} hrs{% else %}-{% endif %}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-danger" style="font-size: 0.95rem;">link</span>
-                            <span>Related Issue: 
-                                <strong class="text-white">
-                                    {% if issue.related_issue %}
-                                        <a href="{% url 'issues:issue_detail' issue.related_issue.pk %}" class="text-info text-decoration-none hover-link">#{{ issue.related_issue.pk }}</a>
-                                    {% else %}
-                                        None
-                                    {% endif %}
-                                </strong>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons opacity-50" style="font-size: 0.95rem;">person_add</span>
-                            <span>Created By: <strong class="text-white">{{ issue.created_by.get_short_name|default:issue.created_by.username|default:"-" }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons opacity-50" style="font-size: 0.95rem;">calendar_today</span>
-                            <span>Created: <strong class="text-white">{{ issue.created_at|date:"M d, Y" }}</strong></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                {# Expandable Details Drawer #}
-                <div class="collapse" id="collapseIssue{{ issue.pk }}">
-                    <div class="ms-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
-                        
-                        {# Multi-line Text Content blocks #}
-                        <div class="row g-3 mb-4">
-                            {# Description #}
-                            <div class="col-12">
-                                <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                    <span class="text-white-50 smaller fw-bold uppercase d-block mb-1">Description</span>
-                                    <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.description|default:"No description provided." }}</p>
+                    <div class="collapse" id="collapseIssue{{ issue.pk }}">
+                        <div class="ms-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
+                                        <span class="text-white-50 smaller fw-bold uppercase d-block mb-1">Description</span>
+                                        <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.description|default:"No description provided." }}</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            {# Remarks #}
-                            {% if issue.remarks %}
-                            <div class="col-12 col-md-6">
-                                <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                    <span class="text-warning smaller fw-bold uppercase d-block mb-1">Remarks</span>
-                                    <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.remarks }}</p>
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            {# QA Notes #}
-                            {% if issue.qa_note %}
-                            <div class="col-12 col-md-6">
-                                <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                    <span class="text-success smaller fw-bold uppercase d-block mb-1">QA Note</span>
-                                    <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.qa_note }}</p>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        {# Screenshots / Cloudinary Attachments Grid #}
-                        {% if issue.image_1 or issue.image_2 or issue.image_3 or issue.image_4 %}
-                        <div class="mb-4">
-                            <span class="text-white-50 smaller fw-bold uppercase d-block mb-2">Attachments</span>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% if issue.image_1 %}
-                                    <a href="{{ issue.image_1.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_1.url }}" alt="Attachment 1" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_2 %}
-                                    <a href="{{ issue.image_2.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_2.url }}" alt="Attachment 2" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_3 %}
-                                    <a href="{{ issue.image_3.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_3.url }}" alt="Attachment 3" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_4 %}
-                                    <a href="{{ issue.image_4.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_4.url }}" alt="Attachment 4" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {# Footer Action Bar #}
-                        <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-3">
-                            <div>
-                                {% if issue.drive_url %}
-                                <a href="{{ issue.drive_url }}" target="_blank" class="btn btn-sm btn-outline-info py-1 px-2 smaller fw-bold d-inline-flex align-items-center gap-1">
-                                    <span class="material-icons fs-6">cloud_queue</span> Google Drive
-                                </a>
-                                {% endif %}
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                {% if issue.can_edit %}
-                                <a href="{% url 'issues:issue_update' issue.pk %}" class="btn btn-sm btn-outline-light border-0 p-1">
-                                    <span class="material-icons fs-6">edit</span>
-                                </a>
-                                {% endif %}
+                            <div class="d-flex justify-content-end align-items-center border-top border-secondary border-opacity-10 pt-3">
                                 <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-1 px-3 smaller fw-bold tracking-tighter">VIEW DETAILS</a>
                             </div>
                         </div>
-
                     </div>
-                </div>
 
+                </div>
             </div>
-        </div>
-    {% endfor %}
-</div>
-{% else %}
-    <div class="metric-card text-center py-5 text-white">
-        <span class="material-icons fs-1 text-white-50 mb-2">search_off</span>
-        <p class="text-white-50 mb-0">No issues found matching your current filters.</p>
+        {% endfor %}
     </div>
-{% endif %}
+
+    {# 3. Unified Pagination Controls Component #}
+    {% if is_paginated %}
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3 pt-3 border-top border-secondary border-opacity-25">
+        <div class="text-white-50 small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} Issues
+        </div>
+        <nav aria-label="Issue pagination">
+            <ul class="pagination pagination-sm mb-0 gap-1">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page=1{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link bg-primary border-primary text-white">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-white border-secondary" href="?page={{ num }}{% if current_filters %}&{{ current_filters }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+        <div class="metric-card text-center py-5 text-white">
+            <span class="material-icons fs-1 text-white-50 mb-2">search_off</span>
+            <p class="text-white-50 mb-0">No issues found matching your current filters.</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

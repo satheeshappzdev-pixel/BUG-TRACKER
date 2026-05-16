@@ -161,18 +161,17 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
         project = form.save()
         return redirect('issues:project_detail', pk=project.pk)
     
-
 class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
+    paginate_by = 50  # <-- Set pagination limit to 50 items per page
 
     def get_queryset(self):
         qs = Issue.objects.select_related('project', 'assignee', 'reporter').prefetch_related('tags')
 
         search = self.request.GET.get('q', '').strip()
         if search:
-            # 1. Start with general text filters
             query = (
                 Q(title__icontains=search)
                 | Q(description__icontains=search)
@@ -182,7 +181,6 @@ class IssueListView(LoginRequiredMixin, ListView):
                 | Q(tags__name__icontains=search)
             )
 
-            # 2. Handle the Project Label format (e.g., "PROJ-123")
             if "-" in search:
                 parts = search.split("-")
                 prefix = parts[0]
@@ -190,7 +188,6 @@ class IssueListView(LoginRequiredMixin, ListView):
                 if suffix.isdigit():
                     query |= Q(project__code__iexact=prefix, pk=suffix)
 
-            # 3. Handle numeric searches (e.g., "123" or "#123")
             clean_id = search.replace('#', '')
             if clean_id.isdigit():
                 query |= Q(pk=clean_id)
@@ -211,14 +208,13 @@ class IssueListView(LoginRequiredMixin, ListView):
             qs = qs.filter(issue_type=issue_type)
 
         project_id = self.request.GET.get('project')
-        if project_id:  # Handles non-empty project ID
+        if project_id:  
             qs = qs.filter(project_id=project_id)
 
         environment = self.request.GET.get('environment')
         if environment:
             qs = qs.filter(environment=environment)
 
-        # Handle source=MINE (Issues involving the current user)
         source = self.request.GET.get('source')
         if source == 'MINE':
             qs = qs.filter(Q(assignee=self.request.user) | Q(reporter=self.request.user))
@@ -251,15 +247,21 @@ class IssueListView(LoginRequiredMixin, ListView):
         if related_issue_id:
             qs = qs.filter(related_issue_id=related_issue_id)
 
-        # Apply authorization flag to results
-        for issue in qs:
-            issue.can_edit = issue.is_authorized(self.request.user)
-
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Inject authorization attributes into the current page's slice dynamically
+        for issue in context['issues']:
+            issue.can_edit = issue.is_authorized(self.request.user)
+
+        # Build clean query string for pagination to keep your search filters intact across pages
+        queries_without_page = self.request.GET.copy()
+        if 'page' in queries_without_page:
+            del queries_without_page['page']
+        context['current_filters'] = queries_without_page.urlencode()
+
         # Persist state in template
         context['search'] = self.request.GET.get('q')
         context['selected_project_id'] = self.request.GET.get('project')
@@ -277,7 +279,6 @@ class IssueListView(LoginRequiredMixin, ListView):
             .objects.filter(reported_issues__isnull=False)
             .distinct()
         )
-        # Related tasks lookup
         context['related_issues'] = Issue.objects.filter(
             issue_type=IssueTypeChoices.TASK
         ).order_by('title')
@@ -424,18 +425,25 @@ class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
     context_object_name = 'issues'
+    paginate_by = 50  # <-- Set pagination limit to 50 items per page
 
     def get_queryset(self):
         user = self.request.user
-        role = getattr(user.team_member, 'role', None)
         
-        # Filter logic: 
-        # QA only sees issues they reported.
-        # Developers only see issues assigned to them.
+        # Safe Check: Prevent RelatedObjectDoesNotExist if user has no profile
+        if hasattr(user, 'team_member'):
+            role = user.team_member.role
+        else:
+            role = None
+        
+        # Filter logic based on team assignment profile
         if role == TeamMemberRoleChoices.QA:
             qs = Issue.objects.filter(reporter=user)
-        else:
+        elif role == TeamMemberRoleChoices.DEVELOPER:
             qs = Issue.objects.filter(assignee=user)
+        else:
+            # Fallback for Admins / Staff without an explicit profile: See both
+            qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user))
 
         # Apply Time Filter
         date_filter = self.request.GET.get('date_filter')
@@ -455,22 +463,45 @@ class MyIssueListView(LoginRequiredMixin, ListView):
             else:
                 qs = qs.filter(status=status)
             
-        return qs.select_related('project', 'assignee', 'reporter').distinct().order_by('-created_at')
+        return qs.select_related('project', 'assignee', 'reporter').prefetch_related('tags').distinct().order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        role = getattr(user.team_member, 'role', None)
         
-        context['view_perspective'] = TeamMemberRoleChoices.QA.label if role == TeamMemberRoleChoices.QA else TeamMemberRoleChoices.DEVELOPER.label
-        
-        # Summary Metrics (Must match the base filter logic in get_queryset)
-        if role == TeamMemberRoleChoices.QA:
-            base_metrics = Issue.objects.filter(reporter=user)
+        # Safe check inside context data configuration
+        if hasattr(user, 'team_member'):
+            role = user.team_member.role
+            context['view_perspective'] = user.team_member.get_role_display()
         else:
-            base_metrics = Issue.objects.filter(assignee=user)
+            role = None
+            context['view_perspective'] = "Staff / Admin"
+        
+        # Build clean query string parameter preservation for pagination loops
+        queries_without_page = self.request.GET.copy()
+        if 'page' in queries_without_page:
+            del queries_without_page['page']
+        context['current_filters'] = queries_without_page.urlencode()
 
-        context['metrics'] = base_metrics.aggregate(
+        # Summary Metrics Evaluation Base Line
+        if role == TeamMemberRoleChoices.QA:
+            metrics_qs = Issue.objects.filter(reporter=user)
+        elif role == TeamMemberRoleChoices.DEVELOPER:
+            metrics_qs = Issue.objects.filter(assignee=user)
+        else:
+            metrics_qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user))
+
+        # Align metrics tracking indicators seamlessly with active timeline viewports
+        date_filter = self.request.GET.get('date_filter')
+        now = timezone.now()
+        if date_filter == 'day':
+            metrics_qs = metrics_qs.filter(created_at__gte=now - timedelta(days=1))
+        elif date_filter == 'week':
+            metrics_qs = metrics_qs.filter(created_at__gte=now - timedelta(weeks=1))
+        elif date_filter == 'month':
+            metrics_qs = metrics_qs.filter(created_at__gte=now - timedelta(days=30))
+
+        context['metrics'] = metrics_qs.aggregate(
             total=Count('id'),
             open=Count('id', filter=Q(status='open')),
             pending_qa=Count('id', filter=Q(status='ready_for_qa')),

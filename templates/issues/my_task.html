@@ -4,6 +4,33 @@
 
 {% block extra_head %}
 <style>
+    /* Fixed Top & Sticky Scroll Architecture */
+    .sticky-top-section {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: #111424; /* Seamless dark backdrop integration */
+        padding-bottom: 0.5rem;
+    }
+
+    .scrollable-issues-region {
+        max-height: calc(100vh - 360px); /* Dynamically scales remaining space */
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    /* Clean Custom UI Scrollbar */
+    .scrollable-issues-region::-webkit-scrollbar {
+        width: 6px;
+    }
+    .scrollable-issues-region::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .scrollable-issues-region::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+    }
+
     /* Card Uniformity */
     .issue-card {
         background: rgba(255, 255, 255, 0.03);
@@ -72,14 +99,15 @@
 {% endblock %}
 
 {% block dashboard_content %}
+<div class="sticky-top-section">
     {# Header & Time Filters #}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h2 class="text-white fw-bold mb-0">{{ view_perspective }} Dashboard</h2>
             <p class="text-white-50 small mb-0">Live status monitoring and task management.</p>
         </div>
         <div class="btn-group btn-group-sm bg-dark p-1 rounded-pill shadow-sm">
-            <a href="?date_filter=all&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'all' %}btn-primary text-white{% else %}text-white-50{% endif %}">All Time</a>
+            <a href="?date_filter=all&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'all' or not current_date_filter %}btn-primary text-white{% else %}text-white-50{% endif %}">All Time</a>
             <a href="?date_filter=day&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'day' %}btn-primary text-white{% else %}text-white-50{% endif %}">Day</a>
             <a href="?date_filter=week&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'week' %}btn-primary text-white{% else %}text-white-50{% endif %}">Week</a>
             <a href="?date_filter=month&status={{ current_status }}" class="btn rounded-pill border-0 {% if current_date_filter == 'month' %}btn-primary text-white{% else %}text-white-50{% endif %}">Month</a>
@@ -87,11 +115,11 @@
     </div>
 
     {# Top Metric Row (All 5 Statuses) #}
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-3">
         <div class="col">
             <div class="metric-box">
                 <i class="material-icons text-primary">analytics</i>
-                <h3 class="text-white">{{ metrics.total|default:0 }}</h3>
+                <h3 class="text-white">{{ paginator.count|default:metrics.total }}</h3>
                 <div class="metric-label">TOTAL</div>
             </div>
         </div>
@@ -126,25 +154,23 @@
     </div>
 
     {# Filter Buttons #}
-    <div class="d-flex gap-2 mb-4 overflow-auto pb-2">
+    <div class="d-flex gap-2 mb-2 overflow-auto pb-1">
         <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
         <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
         <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
         <a href="?status=in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">In Progress</a>
     </div>
+</div>
 
-    {# Issue List Grid #}
+<div class="scrollable-issues-region mt-2">
+    {% if issues %}
     <div class="row g-3">
         {% for issue in issues %}
         <div class="col-12">
             <div class="issue-card p-3 text-white position-relative">
-                {# Visual Status Accent Line #}
                 <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == 'done' %}success{% elif issue.priority == 'critical' %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
                 
-                {# Main Container (Non-Expanded View Context) #}
                 <div class="ms-2">
-                    
-                    {# Top Row: Project info, Title, Status, and Toggle Trigger #}
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
                          data-bs-toggle="collapse" 
                          data-bs-target="#collapseIssue{{ issue.pk }}" 
@@ -174,12 +200,10 @@
                             <span class="status-badge-fixed text-dark text-center {% if issue.status == 'open' %}bg-info{% elif issue.status == 'ready_for_qa' or issue.status == 'pending_qa' %}bg-success{% elif issue.status == 'in_progress' %}bg-warning{% else %}bg-secondary text-white{% endif %}">
                                 {{ issue.get_status_display }}
                             </span>
-                            {# Chevron indicator #}
                             <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
                         </div>
                     </div>
 
-                    {# Detailing: Tags (Visible in non-expanded view) #}
                     <div class="mb-2 d-flex flex-wrap gap-1">
                         {% for tag in issue.tags.all %}
                             <span class="issue-tag-pill">{{ tag.name }}</span>
@@ -188,7 +212,6 @@
                         {% endfor %}
                     </div>
 
-                    {# Unified Single-Line Metadata Bar (Visible in non-expanded view) #}
                     <div class="d-flex flex-wrap align-items-center gap-y-1 smaller text-white-50 pt-1" style="column-gap: 1.25rem !important;">
                         <div class="d-flex align-items-center gap-1">
                             <span class="material-icons text-primary" style="font-size: 0.95rem;">person</span>
@@ -206,124 +229,87 @@
                             <span class="material-icons text-success" style="font-size: 0.95rem;">schedule</span>
                             <span>Updated: <strong class="text-white">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
                         </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-secondary" style="font-size: 0.95rem;">hourglass_empty</span>
-                            <span>Estimate: <strong class="text-white">{% if issue.time_estimate_hours %}{{ issue.time_estimate_hours }} hrs{% else %}-{% endif %}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons text-danger" style="font-size: 0.95rem;">link</span>
-                            <span>Related Issue: 
-                                <strong class="text-white">
-                                    {% if issue.related_issue %}
-                                        <a href="{% url 'issues:issue_detail' issue.related_issue.pk %}" class="text-info text-decoration-none hover-link">#{{ issue.related_issue.pk }}</a>
-                                    {% else %}
-                                        None
-                                    {% endif %}
-                                </strong>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons opacity-50" style="font-size: 0.95rem;">person_add</span>
-                            <span>Created By: <strong class="text-white">{{ issue.created_by.get_short_name|default:issue.created_by.username|default:"-" }}</strong></span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="material-icons opacity-50" style="font-size: 0.95rem;">calendar_today</span>
-                            <span>Created: <strong class="text-white">{{ issue.created_at|date:"M d, Y" }}</strong></span>
-                        </div>
                     </div>
-
                 </div>
 
-                {# Expandable Details Drawer #}
                 <div class="collapse" id="collapseIssue{{ issue.pk }}">
                     <div class="ms-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
-                        
-                        {# Multi-line Text Content blocks #}
                         <div class="row g-3 mb-4">
-                            {# Description #}
                             <div class="col-12">
                                 <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
                                     <span class="text-white-50 smaller fw-bold uppercase d-block mb-1">Description</span>
                                     <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.description|default:"No description provided." }}</p>
                                 </div>
                             </div>
-
-                            {# Remarks #}
-                            {% if issue.remarks %}
-                            <div class="col-12 col-md-6">
-                                <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                    <span class="text-warning smaller fw-bold uppercase d-block mb-1">Remarks</span>
-                                    <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.remarks }}</p>
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            {# QA Notes #}
-                            {% if issue.qa_note %}
-                            <div class="col-12 col-md-6">
-                                <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                    <span class="text-success smaller fw-bold uppercase d-block mb-1">QA Note</span>
-                                    <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.qa_note }}</p>
-                                </div>
-                            </div>
-                            {% endif %}
                         </div>
-
-                        {# Screenshots / Cloudinary Attachments Grid #}
-                        {% if issue.image_1 or issue.image_2 or issue.image_3 or issue.image_4 %}
-                        <div class="mb-4">
-                            <span class="text-white-50 smaller fw-bold uppercase d-block mb-2">Attachments</span>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% if issue.image_1 %}
-                                    <a href="{{ issue.image_1.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_1.url }}" alt="Attachment 1" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_2 %}
-                                    <a href="{{ issue.image_2.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_2.url }}" alt="Attachment 2" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_3 %}
-                                    <a href="{{ issue.image_3.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_3.url }}" alt="Attachment 3" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                                {% if issue.image_4 %}
-                                    <a href="{{ issue.image_4.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded overflow-hidden" style="width: 80px; height: 80px;">
-                                        <img src="{{ issue.image_4.url }}" alt="Attachment 4" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100" style="object-fit: cover;">
-                                    </a>
-                                {% endif %}
-                            </div>
+                        <div class="d-flex justify-content-end align-items-center border-top border-secondary border-opacity-10 pt-3">
+                            <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-1 px-3 smaller fw-bold tracking-tighter">VIEW DETAILS</a>
                         </div>
-                        {% endif %}
-
-                        {# Footer Action Bar #}
-                        <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-3">
-                            <div>
-                                {% if issue.drive_url %}
-                                <a href="{{ issue.drive_url }}" target="_blank" class="btn btn-sm btn-outline-info py-1 px-2 smaller fw-bold d-inline-flex align-items-center gap-1">
-                                    <span class="material-icons fs-6">cloud_queue</span> Google Drive
-                                </a>
-                                {% endif %}
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-1 px-3 smaller fw-bold tracking-tighter">VIEW DETAILS</a>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
             </div>
         </div>
-        {% empty %}
+        {% endfor %}
+    </div>
+
+    {# Dashboard Pagination System Component #}
+    {% if is_paginated %}
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3 pt-3 border-top border-secondary border-opacity-25">
+        <div class="text-white-50 small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} Issues
+        </div>
+        <nav aria-label="Dashboard pagination">
+            <ul class="pagination pagination-sm mb-0 gap-1">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page=1{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link bg-primary border-primary text-white">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-white border-secondary" href="?page={{ num }}{% if current_filters %}&{{ current_filters }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters %}&{{ current_filters }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+        <div class="row g-3">
             <div class="col-12">
                 <div class="metric-box text-center py-5 text-white">
                     <span class="material-icons fs-1 text-white-50 mb-2">search_off</span>
                     <p class="text-white-50 mb-0">No active tasks assigned under this perspective view.</p>
                 </div>
             </div>
-        {% endfor %}
-    </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

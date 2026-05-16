@@ -10,6 +10,19 @@
     body {
         font-size: 0.875rem;
         background: radial-gradient(circle at top right, #0a102e 0%, #050505 100%);
+        background-attachment: fixed;
+    }
+
+    /* Sticky Header Container Configuration */
+    .sticky-dashboard-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        /* Matches background gradient center color to completely hide elements scrolling underneath */
+        background: #070a22; 
+        padding-top: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     /* Refined Metric Cards (Top 4) */
@@ -67,114 +80,136 @@
         font-weight: 600;
         letter-spacing: 0.5px;
     }
+
+    /* Pagination UI Enhancements */
+    .pagination .page-link {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.8rem;
+    }
+    .pagination .page-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #4e73df;
+    }
+    .pagination .page-item.active .page-link {
+        background: #4e73df;
+        border-color: #4e73df;
+        color: white;
+    }
+    .pagination .page-item.disabled .page-link {
+        background: rgba(255, 255, 255, 0.02);
+        color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
 </style>
 {% endblock %}
 
 {% block dashboard_content %}
-    {# Header Section #}
-    <div class="row mb-4 align-items-center">
-        <div class="col">
-            <h2 class="text-white fw-bold mb-1">Dashboard</h2>
-            <p class="text-white-50 small mb-0">Here's what's happening with your work today.</p>
-        </div>
-        <div class="col-auto d-flex align-items-center gap-2">
-            <form method="get" class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center">
-                    <label class="text-white-50 me-2 small mb-0">Project:</label>
-                    <select name="project" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
-                        <option value="">All</option>
-                        {% for p in projects %}
-                            <option value="{{ p.id }}" {% if selected_project_id|default_if_none:'' == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
-                        {% endfor %}
-                    </select>
+    <div class="sticky-dashboard-header mb-4">
+        {# Header Section #}
+        <div class="row mb-3 align-items-center">
+            <div class="col">
+                <h2 class="text-white fw-bold mb-1">Dashboard</h2>
+                <p class="text-white-50 small mb-0">Here's what's happening with your work today.</p>
+            </div>
+            <div class="col-auto d-flex align-items-center gap-2">
+                <form method="get" class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center">
+                        <label class="text-white-50 me-2 small mb-0">Project:</label>
+                        <select name="project" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            {% for p in projects %}
+                                <option value="{{ p.id }}" {% if selected_project_id|default_if_none:'' == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <label class="text-white-50 me-2 small mb-0">Source:</label>
+                        <select name="source" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                            <option value="ALL" {% if selected_source == 'ALL' %}selected{% endif %}>ALL</option>
+                            <option value="MINE" {% if selected_source == 'MINE' %}selected{% endif %}>MINE</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="ms-2 d-none d-sm-inline-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary text-white small">
+                    <span class="me-2">{{ request.user.username }}</span>
+                    <span class="material-icons style-sm" style="font-size: 18px;">account_circle</span>
                 </div>
-                <div class="d-flex align-items-center">
-                    <label class="text-white-50 me-2 small mb-0">Source:</label>
-                    <select name="source" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
-                        <option value="ALL" {% if selected_source == 'ALL' %}selected{% endif %}>ALL</option>
-                        <option value="MINE" {% if selected_source == 'MINE' %}selected{% endif %}>MINE</option>
-                    </select>
-                </div>
-            </form>
-            <div class="ms-2 d-none d-sm-inline-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary text-white small">
-                <span class="me-2">{{ request.user.username }}</span>
-                <span class="material-icons style-sm" style="font-size: 18px;">account_circle</span>
             </div>
         </div>
-    </div>
 
-    {# Top 4 Metric Cards #}
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.OPEN.value }}" class="text-decoration-none">
-                <div class="metric-card glass-card p-3 h-100 text-center text-white">
-                    <span class="material-icons text-primary mb-2">bug_report</span>
-                    <h3 class="fw-bold mb-0">{{ active_bugs }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">Active Bugs</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.DEV_IN_PROGRESS.value }}" class="text-decoration-none">
-                <div class="metric-card glass-card p-3 h-100 text-center text-white">
-                    <span class="material-icons text-success mb-2">task_alt</span>
-                    <h3 class="fw-bold mb-0">{{ active_tasks }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">In Progress</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&priority={{ IssuePriorityChoices.HIGH.value }}" class="text-decoration-none">
-                <div class="metric-card glass-card p-3 h-100 text-center text-white">
-                    <span class="material-icons text-danger mb-2">priority_high</span>
-                    <h3 class="fw-bold mb-0">{{ high_priority_bugs }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">High Priority</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&assignee=me" class="text-decoration-none">
-                <div class="metric-card glass-card p-3 h-100 text-center text-white">
-                    <span class="material-icons text-info mb-2">assignment_ind</span>
-                    <h3 class="fw-bold mb-0">{{ my_open_issues }}</h3>
-                    <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">My Tasks</p>
-                </div>
-            </a>
-        </div>
-    </div>
-
-    {# Status Grid #}
-    <div class="row g-2 mb-4">
-        {% for row in issue_status_stats %}
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <a href="{% url 'issues:issue_list' %}?status={{ row.value }}&source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-decoration-none">
-                    <div class="status-card p-3 h-100 text-white">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="text-white-50 small text-uppercase" style="font-size: 0.65rem;">Status</div>
-                                <h6 class="fw-bold mb-1">{{ row.label }}</h6>
-                                <div class="text-white-50" style="font-size: 0.75rem;">{{ row.count }} Issues</div>
-                            </div>
-                            <div class="status-badge-count">{{ row.count }}</div>
-                        </div>
+        {# Top 4 Metric Cards #}
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.OPEN.value }}" class="text-decoration-none">
+                    <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                        <span class="material-icons text-primary mb-2">bug_report</span>
+                        <h3 class="fw-bold mb-0">{{ active_bugs }}</h3>
+                        <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">Active Bugs</p>
                     </div>
                 </a>
             </div>
-        {% endfor %}
+
+            <div class="col-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.DEV_IN_PROGRESS.value }}" class="text-decoration-none">
+                    <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                        <span class="material-icons text-success mb-2">task_alt</span>
+                        <h3 class="fw-bold mb-0">{{ active_tasks }}</h3>
+                        <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">In Progress</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&priority={{ IssuePriorityChoices.HIGH.value }}" class="text-decoration-none">
+                    <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                        <span class="material-icons text-danger mb-2">priority_high</span>
+                        <h3 class="fw-bold mb-0">{{ high_priority_bugs }}</h3>
+                        <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">High Priority</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&assignee=me" class="text-decoration-none">
+                    <div class="metric-card glass-card p-3 h-100 text-center text-white">
+                        <span class="material-icons text-info mb-2">assignment_ind</span>
+                        <h3 class="fw-bold mb-0">{{ my_open_issues }}</h3>
+                        <p class="small mb-0 opacity-50 text-uppercase" style="letter-spacing: 1px;">My Tasks</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        {# Status Grid #}
+        <div class="row g-2">
+            {% for row in issue_status_stats %}
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <a href="{% url 'issues:issue_list' %}?status={{ row.value }}&source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-decoration-none">
+                        <div class="status-card p-2 px-3 h-100 text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="fw-bold mb-0" style="font-size: 0.85rem;">{{ row.label }}</h6>
+                                    <div class="text-white-50" style="font-size: 0.7rem;">{{ row.count }} Issues</div>
+                                </div>
+                                <div class="status-badge-count" style="font-size: 1rem; padding: 2px 8px;">{{ row.count }}</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 
-    {# Recent Activity Section #}
-    <div class="glass-card p-4">
+    <div class="glass-card p-4 mb-4" id="activity-section">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="text-white fw-bold mb-0">Recent Activity</h5>
             <span class="material-icons text-white-50">history</span>
         </div>
         
         {% if recent_activities %}
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush mb-4">
                 {% for log in recent_activities %}
                     <div class="list-group-item bg-transparent border-bottom border-white-10 px-0 py-3">
                         <div class="d-flex align-items-start">
@@ -190,17 +225,15 @@
                                     <span>modified an issue in</span>
                                     <span class="badge bg-secondary" style="--bs-bg-opacity: .2;">{{ log.issue.project.name }}</span>
                                     
-                                    {# Correct Status Change Indicator using CBV properties #}
+                                    {# Correct Status Change Indicator #}
                                     {% if log.to_status %}
                                         <div class="d-inline-flex align-items-center ms-auto bg-dark px-2 py-1 rounded shadow-sm border border-secondary border-opacity-25" style="font-size: 0.7rem;">
-                                            
                                             {% if log.from_status %}
                                                 <span class="text-white-50">
                                                     {{ log.from_status_label }}
                                                 </span>
                                                 <span class="material-icons mx-1 text-secondary" style="font-size: 10px;">arrow_forward</span>
                                             {% endif %}
-                                            
                                             <span class="fw-bold text-{% if log.to_status == IssueStatusChoices.OPEN.value %}info{% elif log.to_status == IssueStatusChoices.DONE.value or log.to_status == IssueStatusChoices.CLOSED.value %}success{% else %}warning{% endif %}">
                                                 {{ log.to_status_label }}
                                             </span>
@@ -210,12 +243,10 @@
 
                                 {# Issue ID Badge, Type Badge, and Title #}
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    {# Project Code - ID Badge #}
                                     <span class="badge issue-id-badge smaller px-2 py-1">
                                         {% if log.issue.project.code %}{{ log.issue.project.code }}-{{ log.issue.pk }}{% else %}#{{ log.issue.pk }}{% endif %}
                                     </span>
                                     
-                                    {# Issue Type Badge using CBV logic for Label and Color #}
                                     <span class="badge smaller px-2 py-1 border 
                                         {% if log.issue.issue_type == IssueTypeChoices.BUG.value %}
                                             bg-danger-subtle text-danger border-danger border-opacity-25
@@ -229,7 +260,6 @@
 
                                     <a href="{% url 'issues:issue_detail' log.issue.id %}" 
                                        class="text-white text-decoration-none activity-link fw-semibold">
-                                        <span class="text-info fw-normal"></span>
                                         {{ log.issue.title }}
                                     </a>
                                 </div>
@@ -248,6 +278,50 @@
                     </div>
                 {% endfor %}
             </div>
+
+            {# Pagination Nav Links #}
+            {% if recent_activities.has_other_pages %}
+                <nav aria-label="Activity pagination">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% if recent_activities.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?project={{ selected_project_id|default:'' }}&source={{ selected_source }}&page={{ recent_activities.previous_page_number }}#activity-section" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        {% endif %}
+
+                        {% for i in recent_activities.paginator.page_range %}
+                            {% if recent_activities.number == i %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% elif i > recent_activities.number|add:-3 and i < recent_activities.number|add:3 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?project={{ selected_project_id|default:'' }}&source={{ selected_source }}&page={{ i }}#activity-section">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if recent_activities.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?project={{ selected_project_id|default:'' }}&source={{ selected_source }}&page={{ recent_activities.next_page_number }}#activity-section" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
         {% else %}
             <div class="text-center py-4">
                 <p class="text-white-50 mb-0 small">No activity recorded for this filter.</p>
