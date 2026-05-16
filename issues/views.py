@@ -114,7 +114,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
                     entry['pending_label'] = "Total Workload"
                     entry['total_pending_all_time'] = project.issues.filter(
                         assignee_id=u_id
-                    ).exclude(status__in=['done', 'closed', 'ready_for_qa']).count()
+                    ).exclude(status__in=['done', 'closed', 'ready_for_qa', 'qa_in_progress', 'rejected']).count()
 
                 # Name & Status Lists
                 first = entry.get(f'{user_prefix}__first_name')
