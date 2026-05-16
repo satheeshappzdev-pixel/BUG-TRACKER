@@ -11,6 +11,32 @@
         min-height: 100vh;
     }
 
+    /* Fixed Top Section & Independent Scrollable Container Adjustments */
+    .dashboard-fixed-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 30px); /* Clean layout constraint alignment */
+        overflow: hidden;
+    }
+
+    .dashboard-scrollable-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-right: 0px;
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .dashboard-scrollable-content::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .dashboard-scrollable-content {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
     /* Metric Cards */
     .metric-card {
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -96,343 +122,351 @@
 {% endblock %}
 
 {% block dashboard_content %}
-    {# 1. Header Section #}
-    <div class="row mb-4 align-items-center">
-        <div class="col">
-            <h2 class="text-white fw-bold mb-1">{{ project.name }}</h2>
-            <p class="text-white-50 small mb-0">Project: <strong>{{ project.code }}</strong> | Owner: {{ project.owner.get_full_name|default:project.owner.username }}</p>
-        </div>
-        <div class="col-auto d-flex align-items-center gap-3">
-            <a href="{% url 'issues:issue_create' project.pk %}" class="btn btn-primary rounded-pill px-4">
-                <i class="bi bi-plus-lg me-1"></i> Create Issue
-            </a>
+<div class="dashboard-fixed-wrapper">
+    {# --- FIXED UPPER CONTAINER --- #}
+    <div>
+        {# 1. Header Section #}
+        <div class="row mb-4 align-items-center">
+            <div class="col">
+                <h2 class="text-white fw-bold mb-1">{{ project.name }}</h2>
+                <p class="text-white-50 small mb-0">Project: <strong>{{ project.code }}</strong> | Owner: {{ project.owner.get_full_name|default:project.owner.username }}</p>
+            </div>
+            <div class="col-auto d-flex align-items-center gap-3">
+                <a href="{% url 'issues:issue_create' project.pk %}" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-plus-lg me-1"></i> Create Issue
+                </a>
 
-            <div class="btn-group p-1" style="background: rgba(255,255,255,0.1); border-radius: 12px;">
-                <a href="?period=daily" class="btn btn-sm {% if current_period == 'daily' %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">Daily</a>
-                <a href="?period=weekly" class="btn btn-sm {% if current_period == 'weekly' %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">Weekly</a>
-                <a href="?period=all" class="btn btn-sm {% if current_period == 'all' or not current_period %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">All Time</a>
+                <div class="btn-group p-1" style="background: rgba(255,255,255,0.1); border-radius: 12px;">
+                    <a href="?period=daily" class="btn btn-sm {% if current_period == 'daily' %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">Daily</a>
+                    <a href="?period=weekly" class="btn btn-sm {% if current_period == 'weekly' %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">Weekly</a>
+                    <a href="?period=all" class="btn btn-sm {% if current_period == 'all' or not current_period %}btn-primary{% else %}text-white{% endif %} rounded-pill px-3">All Time</a>
+                </div>
+            </div>
+        </div>
+
+        {# 2. Metrics Summary #}
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center">
+                    <h3 class="fw-bold mb-0 text-white">{{ metrics.total }}</h3>
+                    <p class="small mb-0 opacity-50">FILTERED ISSUES</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center">
+                    <h3 class="fw-bold mb-0 text-danger">{{ metrics.high_priority }}</h3>
+                    <p class="small mb-0 opacity-50">HIGH PRIORITY</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center">
+                    <h3 class="fw-bold mb-0 text-info">{{ metrics.open_count }}</h3>
+                    <p class="small mb-0 opacity-50">OPEN</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="metric-card p-3 text-center">
+                    <h3 class="fw-bold mb-0 text-success">{{ metrics.done_count }}</h3>
+                    <p class="small mb-0 opacity-50">DONE</p>
+                </div>
             </div>
         </div>
     </div>
 
-    {# 2. Metrics Summary #}
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <div class="metric-card p-3 text-center">
-                <h3 class="fw-bold mb-0 text-white">{{ metrics.total }}</h3>
-                <p class="small mb-0 opacity-50">FILTERED ISSUES</p>
-            </div>
+    {# --- SCROLLABLE CONTAINER FOR ALL REMAINING SECTIONS --- #}
+    <div class="dashboard-scrollable-content">
+        {# 3. Developer Summary Table #}
+        <div class="mb-5">
+            <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+                <span class="material-icons me-2">code</span> Developer Summary
+            </h5>
+            {% include "issues/partials/_summary_table.html" with summary_data=dev_summary %}
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card p-3 text-center">
-                <h3 class="fw-bold mb-0 text-danger">{{ metrics.high_priority }}</h3>
-                <p class="small mb-0 opacity-50">HIGH PRIORITY</p>
-            </div>
+
+        {# 4. QA Summary Table #}
+        <div class="mb-5">
+            <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+                <span class="material-icons me-2">fact_check</span> QA Summary
+            </h5>
+            {% include "issues/partials/_summary_table.html" with summary_data=qa_summary %}
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card p-3 text-center">
-                <h3 class="fw-bold mb-0 text-info">{{ metrics.open_count }}</h3>
-                <p class="small mb-0 opacity-50">OPEN</p>
-            </div>
+
+        {# 5. Recent Issues #}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-white fw-bold mb-0">Recent Issues</h5>
+            <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-primary text-decoration-none smaller hover-link fw-semibold tracking-wide">View All</a>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card p-3 text-center">
-                <h3 class="fw-bold mb-0 text-success">{{ metrics.done_count }}</h3>
-                <p class="small mb-0 opacity-50">DONE</p>
-            </div>
-        </div>
-    </div>
 
-    {# 3. Developer Summary Table #}
-    <div class="mb-5">
-        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
-            <span class="material-icons me-2">code</span> Developer Summary
-        </h5>
-        {% include "issues/partials/_summary_table.html" with summary_data=dev_summary %}
-    </div>
-
-    {# 4. QA Summary Table #}
-    <div class="mb-5">
-        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
-            <span class="material-icons me-2">fact_check</span> QA Summary
-        </h5>
-        {% include "issues/partials/_summary_table.html" with summary_data=qa_summary %}
-    </div>
-
-{# 5. Recent Issues #}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="text-white fw-bold mb-0">Recent Issues</h5>
-    <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-primary text-decoration-none smaller hover-link fw-semibold tracking-wide">View All</a>
-</div>
-
-<style>
-    /* Contextual Additions to support isolated Recent Issues Expansion functionality */
-    .issue-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        transition: background 0.25s ease, border-color 0.25s ease;
-    }
-    .issue-card:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.15);
-    }
-    
-    /* Refined Issues Page Translucent Status Badges */
-    .status-badge-issues-theme {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 0.68rem;
-        letter-spacing: 0.06em;
-        text-align: center;
-        text-transform: uppercase;
-        min-width: 110px;
-    }
-    
-    /* System Specific Status Color Maps matched to Choice Slugs */
-    .status-badge-open { 
-        background: rgba(13, 202, 240, 0.1) !important; 
-        color: #0dcaf0 !important; 
-        border: 1px solid rgba(13, 202, 240, 0.25) !important; 
-    }
-    .status-badge-dev_in_progress { 
-        background: rgba(255, 193, 7, 0.1) !important; 
-        color: #ffc107 !important; 
-        border: 1px solid rgba(255, 193, 7, 0.25) !important; 
-    }
-    .status-badge-ready_for_qa { 
-        background: rgba(102, 16, 242, 0.12) !important; 
-        color: #a370f7 !important; 
-        border: 1px solid rgba(102, 16, 242, 0.25) !important; 
-    }
-    .status-badge-done, .status-badge-closed { 
-        background: rgba(25, 135, 84, 0.15) !important; 
-        color: #75b798 !important; 
-        border: 1px solid rgba(25, 135, 84, 0.25) !important; 
-    }
-    .status-badge-default { 
-        background: rgba(255, 255, 255, 0.05) !important; 
-        color: rgba(255, 255, 255, 0.6) !important; 
-        border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-    }
-    
-    /* Issue Subtag Badges */
-    .issue-tag-pill {
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        font-size: 0.65rem;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 4px;
-    }
-
-    /* Interactive Rotation Hooks */
-    [aria-expanded="true"] .accordion-arrow-icon {
-        transform: rotate(180deg);
-        color: #3b82f6 !important;
-    }
-    
-    .hover-opacity-100 {
-        transition: opacity 0.2s ease;
-    }
-    .hover-opacity-100:hover {
-        opacity: 1 !important;
-    }
-</style>
-
-<div class="row g-3">
-    {% for issue in issues %}
-    <div class="col-12">
-        <div class="issue-card p-3 text-white position-relative">
-            {# Visual Status Accent Line #}
-            <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == IssueStatusChoices.DONE.value or issue.status == IssueStatusChoices.CLOSED.value %}success{% elif issue.priority == IssuePriorityChoices.CRITICAL.value or issue.priority == IssuePriorityChoices.HIGH.value %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
+        <style>
+            /* Contextual Additions to support isolated Recent Issues Expansion functionality */
+            .issue-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                transition: background 0.25s ease, border-color 0.25s ease;
+            }
+            .issue-card:hover {
+                background: rgba(255, 255, 255, 0.06);
+                border-color: rgba(255, 255, 255, 0.15);
+            }
             
-            {# Main Container #}
-            <div class="ps-2">
-                
-                {# Top Row Interactive Header Block #}
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
-                     data-bs-toggle="collapse" 
-                     data-bs-target="#collapseRecentIssue{{ issue.pk }}" 
-                     style="cursor: pointer;"
-                     role="button"
-                     aria-expanded="false" 
-                     aria-controls="collapseRecentIssue{{ issue.pk }}">
+            /* Refined Issues Page Translucent Status Badges */
+            .status-badge-issues-theme {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 8px;
+                font-weight: 700;
+                font-size: 0.68rem;
+                letter-spacing: 0.06em;
+                text-align: center;
+                text-transform: uppercase;
+                min-width: 110px;
+            }
+            
+            /* System Specific Status Color Maps matched to Choice Slugs */
+            .status-badge-open { 
+                background: rgba(13, 202, 240, 0.1) !important; 
+                color: #0dcaf0 !important; 
+                border: 1px solid rgba(13, 202, 240, 0.25) !important; 
+            }
+            .status-badge-dev_in_progress { 
+                background: rgba(255, 193, 7, 0.1) !important; 
+                color: #ffc107 !important; 
+                border: 1px solid rgba(255, 193, 7, 0.25) !important; 
+            }
+            .status-badge-ready_for_qa { 
+                background: rgba(102, 16, 242, 0.12) !important; 
+                color: #a370f7 !important; 
+                border: 1px solid rgba(102, 16, 242, 0.25) !important; 
+            }
+            .status-badge-done, .status-badge-closed { 
+                background: rgba(25, 135, 84, 0.15) !important; 
+                color: #75b798 !important; 
+                border: 1px solid rgba(25, 135, 84, 0.25) !important; 
+            }
+            .status-badge-default { 
+                background: rgba(255, 255, 255, 0.05) !important; 
+                color: rgba(255, 255, 255, 0.6) !important; 
+                border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+            }
+            
+            /* Issue Subtag Badges */
+            .issue-tag-pill {
+                background: rgba(255, 255, 255, 0.05);
+                color: rgba(255, 255, 255, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                font-size: 0.65rem;
+                font-weight: 600;
+                padding: 2px 8px;
+                border-radius: 4px;
+            }
+
+            /* Interactive Rotation Hooks */
+            [aria-expanded="true"] .accordion-arrow-icon {
+                transform: rotate(180deg);
+                color: #3b82f6 !important;
+            }
+            
+            .hover-opacity-100 {
+                transition: opacity 0.2s ease;
+            }
+            .hover-opacity-100:hover {
+                opacity: 1 !important;
+            }
+        </style>
+
+        <div class="row g-3 pb-3">
+            {% for issue in issues %}
+            <div class="col-12">
+                <div class="issue-card p-3 text-white position-relative">
+                    {# Visual Status Accent Line #}
+                    <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == IssueStatusChoices.DONE.value or issue.status == IssueStatusChoices.CLOSED.value %}success{% elif issue.priority == IssuePriorityChoices.CRITICAL.value or issue.priority == IssuePriorityChoices.HIGH.value %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
                     
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                            <span class="text-primary smaller fw-bold uppercase tracking-wider" style="font-size: 0.75rem;">{{ issue.project.name }}</span>
-                            <span class="text-white-50 opacity-50 small">/</span>
-                            <span class="text-white-50 fw-monospace smaller">
-                                {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
-                            </span>
+                    {# Main Container #}
+                    <div class="ps-2">
+                        
+                        {# Top Row Interactive Header Block #}
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
+                             data-bs-toggle="collapse" 
+                             data-bs-target="#collapseRecentIssue{{ issue.pk }}" 
+                             style="cursor: pointer;"
+                             role="button"
+                             aria-expanded="false" 
+                             aria-controls="collapseRecentIssue{{ issue.pk }}">
                             
-                            {# Issue Type Badge #}
-                            <span class="badge {% if issue.issue_type == IssueTypeChoices.BUG.value %}bg-danger-subtle text-danger border-danger{% elif issue.issue_type == IssueTypeChoices.TASK.value %}bg-info-subtle text-info border-info{% else %}bg-primary-subtle text-primary border-primary{% endif %} smaller px-2 py-0.5 border border-opacity-25" style="font-size: 0.65rem;">
-                                {{ issue.get_issue_type_display }}
-                            </span>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                    <span class="text-primary smaller fw-bold uppercase tracking-wider" style="font-size: 0.75rem;">{{ issue.project.name }}</span>
+                                    <span class="text-white-50 opacity-50 small">/</span>
+                                    <span class="text-white-50 fw-monospace smaller">
+                                        {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
+                                    </span>
+                                    
+                                    {# Issue Type Badge #}
+                                    <span class="badge {% if issue.issue_type == IssueTypeChoices.BUG.value %}bg-danger-subtle text-danger border-danger{% elif issue.issue_type == IssueTypeChoices.TASK.value %}bg-info-subtle text-info border-info{% else %}bg-primary-subtle text-primary border-primary{% endif %} smaller px-2 py-0.5 border border-opacity-25" style="font-size: 0.65rem;">
+                                        {{ issue.get_issue_type_display }}
+                                    </span>
+                                    
+                                    {# Priority Badge #}
+                                    <span class="badge {% if issue.priority == IssuePriorityChoices.HIGH.value or issue.priority == IssuePriorityChoices.CRITICAL.value %}bg-danger text-white{% elif issue.priority == IssuePriorityChoices.MEDIUM.value %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} smaller px-2 py-0.5 ms-1" style="font-size: 0.65rem; font-weight: 700;">
+                                        {{ issue.get_priority_display }}
+                                    </span>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-white mt-1">
+                                    {{ issue.title }}
+                                </h6>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
+                                {# Dynamic Translucent Status Badge matched exactly to your Issue System #}
+                                <span class="status-badge-issues-theme 
+                                    {% if issue.status == 'open' %}status-badge-open
+                                    {% elif issue.status == 'dev_in_progress' %}status-badge-dev_in_progress
+                                    {% elif issue.status == 'ready_for_qa' %}status-badge-ready_for_qa
+                                    {% elif issue.status == 'done' or issue.status == 'closed' %}status-badge-done
+                                    {% else %}status-badge-default{% endif %}">
+                                    {{ issue.get_status_display }}
+                                </span>
+                                {# Chevron indicator #}
+                                <span class="material-icons text-white-50 accordion-arrow-icon" style="transition: transform 0.2s ease; font-size: 1.25rem;">expand_more</span>
+                            </div>
+                        </div>
+
+                        {# Detailing: Tag Grid Array #}
+                        <div class="mb-3 d-flex flex-wrap gap-1 ps-1">
+                            {% for tag in issue.tags.all %}
+                                <span class="issue-tag-pill">{{ tag.name }}</span>
+                            {% empty %}
+                                <span class="text-white-50 smaller fst-italic opacity-25">no tags</span>
+                            {% endfor %}
+                        </div>
+
+                        {# Unified Single-Line Meta Strip Row Layout #}
+                        <div class="d-flex flex-wrap align-items-center gap-y-2 smaller text-white-50 pt-2 border-top border-secondary border-opacity-10 ps-1" style="column-gap: 1.5rem !important;">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-primary opacity-75" style="font-size: 0.95rem;">person</span>
+                                <span>Assignee: <strong class="text-white fw-semibold">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-info opacity-75" style="font-size: 0.95rem;">campaign</span>
+                                <span>Reporter: <strong class="text-white fw-semibold">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-warning opacity-75" style="font-size: 0.95rem;">layers</span>
+                                <span>Env: <strong class="text-white fw-semibold">{{ issue.get_environment_display|default:"-" }}</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-success opacity-75" style="font-size: 0.95rem;">schedule</span>
+                                <span>Updated: <strong class="text-white fw-semibold">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
+                            </div>
+                            {% if issue.time_estimate_hours %}
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-secondary opacity-75" style="font-size: 0.95rem;">hourglass_empty</span>
+                                <span>Estimate: <strong class="text-white fw-semibold">{{ issue.time_estimate_hours }} hrs</strong></span>
+                            </div>
+                            {% endif %}
+                            <div class="d-flex align-items-center gap-1 ms-auto-md opacity-75">
+                                <span class="material-icons" style="font-size: 0.95rem;">calendar_today</span>
+                                <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {# Expandable System Details Drawer Context #}
+                    <div class="collapse" id="collapseRecentIssue{{ issue.pk }}">
+                        <div class="ps-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
                             
-                            {# Priority Badge #}
-                            <span class="badge {% if issue.priority == IssuePriorityChoices.HIGH.value or issue.priority == IssuePriorityChoices.CRITICAL.value %}bg-danger text-white{% elif issue.priority == IssuePriorityChoices.MEDIUM.value %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} smaller px-2 py-0.5 ms-1" style="font-size: 0.65rem; font-weight: 700;">
-                                {{ issue.get_priority_display }}
-                            </span>
-                        </div>
-                        <h6 class="fw-bold mb-0 text-white mt-1">
-                            {{ issue.title }}
-                        </h6>
-                    </div>
+                            {# Dynamic Data Block Container Rows #}
+                            <div class="row g-3 mb-4">
+                                {# Description Content Segment #}
+                                <div class="col-12">
+                                    <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
+                                        <span class="text-primary smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">DESCRIPTION BLOCK</span>
+                                        <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.description|default:"No description payload attached to this record." }}</p>
+                                    </div>
+                                </div>
 
-                    <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
-                        {# Dynamic Translucent Status Badge matched exactly to your Issue System #}
-                        <span class="status-badge-issues-theme 
-                            {% if issue.status == 'open' %}status-badge-open
-                            {% elif issue.status == 'dev_in_progress' %}status-badge-dev_in_progress
-                            {% elif issue.status == 'ready_for_qa' %}status-badge-ready_for_qa
-                            {% elif issue.status == 'done' or issue.status == 'closed' %}status-badge-done
-                            {% else %}status-badge-default{% endif %}">
-                            {{ issue.get_status_display }}
-                        </span>
-                        {# Chevron indicator #}
-                        <span class="material-icons text-white-50 accordion-arrow-icon" style="transition: transform 0.2s ease; font-size: 1.25rem;">expand_more</span>
-                    </div>
-                </div>
+                                {# System Remarks block #}
+                                {% if issue.remarks %}
+                                <div class="col-12 col-md-6">
+                                    <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
+                                        <span class="text-warning smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">ADMIN REMARKS</span>
+                                        <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.remarks }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
 
-                {# Detailing: Tag Grid Array #}
-                <div class="mb-3 d-flex flex-wrap gap-1 ps-1">
-                    {% for tag in issue.tags.all %}
-                        <span class="issue-tag-pill">{{ tag.name }}</span>
-                    {% empty %}
-                        <span class="text-white-50 smaller fst-italic opacity-25">no tags</span>
-                    {% endfor %}
-                </div>
-
-                {# Unified Single-Line Meta Strip Row Layout #}
-                <div class="d-flex flex-wrap align-items-center gap-y-2 smaller text-white-50 pt-2 border-top border-secondary border-opacity-10 ps-1" style="column-gap: 1.5rem !important;">
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="material-icons text-primary opacity-75" style="font-size: 0.95rem;">person</span>
-                        <span>Assignee: <strong class="text-white fw-semibold">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="material-icons text-info opacity-75" style="font-size: 0.95rem;">campaign</span>
-                        <span>Reporter: <strong class="text-white fw-semibold">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="material-icons text-warning opacity-75" style="font-size: 0.95rem;">layers</span>
-                        <span>Env: <strong class="text-white fw-semibold">{{ issue.get_environment_display|default:"-" }}</strong></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="material-icons text-success opacity-75" style="font-size: 0.95rem;">schedule</span>
-                        <span>Updated: <strong class="text-white fw-semibold">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
-                    </div>
-                    {% if issue.time_estimate_hours %}
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="material-icons text-secondary opacity-75" style="font-size: 0.95rem;">hourglass_empty</span>
-                        <span>Estimate: <strong class="text-white fw-semibold">{{ issue.time_estimate_hours }} hrs</strong></span>
-                    </div>
-                    {% endif %}
-                    <div class="d-flex align-items-center gap-1 ms-auto-md opacity-75">
-                        <span class="material-icons" style="font-size: 0.95rem;">calendar_today</span>
-                        <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
-                    </div>
-                </div>
-
-            </div>
-
-            {# Expandable System Details Drawer Context #}
-            <div class="collapse" id="collapseRecentIssue{{ issue.pk }}">
-                <div class="ps-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
-                    
-                    {# Dynamic Data Block Container Rows #}
-                    <div class="row g-3 mb-4">
-                        {# Description Content Segment #}
-                        <div class="col-12">
-                            <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
-                                <span class="text-primary smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">DESCRIPTION BLOCK</span>
-                                <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.description|default:"No description payload attached to this record." }}</p>
+                                {# Verification QA Notes #}
+                                {% if issue.qa_note %}
+                                <div class="col-12 col-md-6">
+                                    <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
+                                        <span class="text-success smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">QA FIELD VALIDATION VERDICT</span>
+                                        <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.qa_note }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
-                        </div>
 
-                        {# System Remarks block #}
-                        {% if issue.remarks %}
-                        <div class="col-12 col-md-6">
-                            <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
-                                <span class="text-warning smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">ADMIN REMARKS</span>
-                                <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.remarks }}</p>
+                            {# Image Attachment Grid Blocks #}
+                            {% if issue.image_1 or issue.image_2 or issue.image_3 or issue.image_4 %}
+                            <div class="mb-4">
+                                <span class="text-white-50 smaller fw-bold uppercase tracking-wider d-block mb-2" style="font-size: 0.65rem;">VERIFICATION PAYLOADS (SCREENSHOTS)</span>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if issue.image_1 %}
+                                        <a href="{{ issue.image_1.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
+                                            <img src="{{ issue.image_1.url }}" alt="Payload Segment 1" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
+                                        </a>
+                                    {% endif %}
+                                    {% if issue.image_2 %}
+                                        <a href="{{ issue.image_2.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
+                                            <img src="{{ issue.image_2.url }}" alt="Payload Segment 2" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
+                                        </a>
+                                    {% endif %}
+                                    {% if issue.image_3 %}
+                                        <a href="{{ issue.image_3.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
+                                            <img src="{{ issue.image_3.url }}" alt="Payload Segment 3" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
+                                        </a>
+                                    {% endif %}
+                                    {% if issue.image_4 %}
+                                        <a href="{{ issue.image_4.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
+                                            <img src="{{ issue.image_4.url }}" alt="Payload Segment 4" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
-                        {% endif %}
+                            {% endif %}
 
-                        {# Verification QA Notes #}
-                        {% if issue.qa_note %}
-                        <div class="col-12 col-md-6">
-                            <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-10">
-                                <span class="text-success smaller fw-bold uppercase tracking-wider d-block mb-1" style="font-size: 0.65rem;">QA FIELD VALIDATION VERDICT</span>
-                                <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap; font-size: 0.825rem;">{{ issue.qa_note }}</p>
+                            {# Drawer Core Action Trigger Footer bar #}
+                            <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-3">
+                                <div>
+                                    {% if issue.drive_url %}
+                                    <a href="{{ issue.drive_url }}" target="_blank" class="btn btn-sm btn-outline-info py-1.5 px-3 smaller fw-bold d-inline-flex align-items-center gap-1">
+                                        <span class="material-icons fs-6">cloud_queue</span> GOOGLE STORAGE
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="{% url 'issues:issue_detail' issue.id %}" class="btn btn-sm btn-primary py-1.5 px-3 smaller fw-bold tracking-tighter d-inline-flex align-items-center gap-1">
+                                        CORE MANIFEST <span class="material-icons" style="font-size: 14px;">open_in_new</span>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                        {% endif %}
-                    </div>
 
-                    {# Image Attachment Grid Blocks #}
-                    {% if issue.image_1 or issue.image_2 or issue.image_3 or issue.image_4 %}
-                    <div class="mb-4">
-                        <span class="text-white-50 smaller fw-bold uppercase tracking-wider d-block mb-2" style="font-size: 0.65rem;">VERIFICATION PAYLOADS (SCREENSHOTS)</span>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% if issue.image_1 %}
-                                <a href="{{ issue.image_1.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
-                                    <img src="{{ issue.image_1.url }}" alt="Payload Segment 1" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
-                                </a>
-                            {% endif %}
-                            {% if issue.image_2 %}
-                                <a href="{{ issue.image_2.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
-                                    <img src="{{ issue.image_2.url }}" alt="Payload Segment 2" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
-                                </a>
-                            {% endif %}
-                            {% if issue.image_3 %}
-                                <a href="{{ issue.image_3.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
-                                    <img src="{{ issue.image_3.url }}" alt="Payload Segment 3" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
-                                </a>
-                            {% endif %}
-                            {% if issue.image_4 %}
-                                <a href="{{ issue.image_4.url }}" target="_blank" class="d-inline-block border border-secondary border-opacity-25 rounded-3 overflow-hidden" style="width: 72px; height: 72px;">
-                                    <img src="{{ issue.image_4.url }}" alt="Payload Segment 4" class="w-100 h-100 object-fit-cover opacity-75 hover-opacity-100">
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {# Drawer Core Action Trigger Footer bar #}
-                    <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-3">
-                        <div>
-                            {% if issue.drive_url %}
-                            <a href="{{ issue.drive_url }}" target="_blank" class="btn btn-sm btn-outline-info py-1.5 px-3 smaller fw-bold d-inline-flex align-items-center gap-1">
-                                <span class="material-icons fs-6">cloud_queue</span> GOOGLE STORAGE
-                            </a>
-                            {% endif %}
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <a href="{% url 'issues:issue_detail' issue.id %}" class="btn btn-sm btn-primary py-1.5 px-3 smaller fw-bold tracking-tighter d-inline-flex align-items-center gap-1">
-                                CORE MANIFEST <span class="material-icons" style="font-size: 14px;">open_in_new</span>
-                            </a>
                         </div>
                     </div>
 
                 </div>
             </div>
-
+            {% empty %}
+            <div class="col-12">
+                <div class="bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-center py-4 rounded-3 text-white">
+                    <span class="material-icons fs-3 text-white-50 mb-1">search_off</span>
+                    <p class="text-white-50 smaller mb-0">No operational issue streams detected within this registry scope.</p>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-center py-4 rounded-3 text-white">
-            <span class="material-icons fs-3 text-white-50 mb-1">search_off</span>
-            <p class="text-white-50 smaller mb-0">No operational issue streams detected within this registry scope.</p>
-        </div>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}
