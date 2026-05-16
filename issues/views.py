@@ -5,17 +5,13 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from issues.choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, TeamMemberRoleChoices
-
 from django.db.models import Q, Count
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Issue
-
-
 from django.contrib.auth import get_user_model
 from .forms import ProjectForm, IssueForm, IssueRemarkLogForm
 from .models import IssueRemarkLog, Project, Issue
-
 from .forms import TagForm
 from .models import Tag
 from django.db.models import Q
@@ -28,6 +24,12 @@ from django.views.generic import DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Project, Issue
 from .models import Issue
+from django.db.models import Count, Q
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
+from .models import Project, IssueStatusChoices
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -38,15 +40,6 @@ class ProjectListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Project.objects.select_related('owner', 'team').all()
 
-
-
-
-from django.db.models import Count, Q
-from django.utils import timezone
-from datetime import timedelta
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView
-from .models import Project, IssueStatusChoices
 
 class ProjectDetailView(LoginRequiredMixin, DetailView):
     model = Project
@@ -121,7 +114,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
                     entry['pending_label'] = "Total Workload"
                     entry['total_pending_all_time'] = project.issues.filter(
                         assignee_id=u_id
-                    ).exclude(status__in=['done', 'closed']).count()
+                    ).exclude(status__in=['done', 'closed', 'ready_for_qa']).count()
 
                 # Name & Status Lists
                 first = entry.get(f'{user_prefix}__first_name')
@@ -144,6 +137,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
             'status_choices': status_choices
         })
         return context
+
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
@@ -468,7 +462,7 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         user = self.request.user
         role = getattr(user.team_member, 'role', None)
         
-        context['view_perspective'] = 'QA' if role == TeamMemberRoleChoices.QA else TeamMemberRoleChoices.DEVELOPER
+        context['view_perspective'] = TeamMemberRoleChoices.QA.label if role == TeamMemberRoleChoices.QA else TeamMemberRoleChoices.DEVELOPER.label
         
         # Summary Metrics (Must match the base filter logic in get_queryset)
         if role == TeamMemberRoleChoices.QA:
