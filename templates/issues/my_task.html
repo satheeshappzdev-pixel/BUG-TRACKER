@@ -222,7 +222,7 @@
             <div class="col">
                 <div class="metric-box">
                     <i class="material-icons text-warning">sync</i>
-                    <h3 class="text-white">{{ metrics.in_progress|default:0 }}</h3>
+                    <h3 class="text-white">{{ metrics.dev_in_progress|default:0 }}</h3>
                     <div class="metric-label">IN PROGRESS</div>
                 </div>
             </div>
@@ -240,7 +240,7 @@
             <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
             <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
             <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
-            <a href="?status=in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">In Progress</a>
+            <a href="?status=dev_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'dev_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">In Progress</a>
         </div>
     </div>
 
@@ -280,7 +280,7 @@
                             </div>
 
                             <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
-                                <span class="status-badge-fixed text-dark text-center {% if issue.status == 'open' %}bg-info{% elif issue.status == 'ready_for_qa' or issue.status == 'pending_qa' %}bg-success{% elif issue.status == 'in_progress' %}bg-warning{% else %}bg-secondary text-white{% endif %}">
+                                <span class="status-badge-fixed text-dark text-center {% if issue.status == 'open' %}bg-info{% elif issue.status == 'ready_for_qa' or issue.status == 'pending_qa' %}bg-success{% elif issue.status == 'dev_in_progress' %}bg-warning{% else %}bg-secondary text-white{% endif %}">
                                     {{ issue.get_status_display }}
                                 </span>
                                 <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
