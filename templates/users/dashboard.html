@@ -13,19 +13,19 @@
         background-attachment: fixed;
     }
 
-    /* Sticky Header Container Configuration */
-    .sticky-dashboard-header {
+    /* Fixed Sticky Wrapper for Top Sections */
+    .sticky-top-wrapper {
         position: sticky;
         top: 0;
         z-index: 1020;
-        /* Matches background gradient center color to completely hide elements scrolling underneath */
-        background: #070a22; 
+        /* Match dark radial background base color to prevent text overlapping transparency issues */
+        background: #05060f; 
         padding-top: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        margin-top: -1.5rem; /* Offsets container padding alignment */
     }
 
-    /* Refined Metric Cards (Top 4) */
+    /* Refined Metric Cards (Top 4) - Measurements Kept Identical */
     .metric-card {
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -37,7 +37,7 @@
         border-color: rgba(255, 255, 255, 0.3);
     }
 
-    /* Compact Status Cards (Grid) */
+    /* Compact Status Cards (Grid) - Measurements Kept Identical */
     .status-card {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -106,9 +106,9 @@
 {% endblock %}
 
 {% block dashboard_content %}
-    <div class="sticky-dashboard-header mb-4">
+    <div class="sticky-top-wrapper">
         {# Header Section #}
-        <div class="row mb-3 align-items-center">
+        <div class="row mb-4 align-items-center">
             <div class="col">
                 <h2 class="text-white fw-bold mb-1">Dashboard</h2>
                 <p class="text-white-50 small mb-0">Here's what's happening with your work today.</p>
@@ -140,7 +140,7 @@
         </div>
 
         {# Top 4 Metric Cards #}
-        <div class="row g-3 mb-3">
+        <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3">
                 <a href="{% url 'issues:issue_list' %}?source={{ selected_source }}&project={{ selected_project_id|default:'' }}&status={{ IssueStatusChoices.OPEN.value }}" class="text-decoration-none">
                     <div class="metric-card glass-card p-3 h-100 text-center text-white">
@@ -183,17 +183,18 @@
         </div>
 
         {# Status Grid #}
-        <div class="row g-2">
+        <div class="row g-2 mb-2">
             {% for row in issue_status_stats %}
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                     <a href="{% url 'issues:issue_list' %}?status={{ row.value }}&source={{ selected_source }}&project={{ selected_project_id|default:'' }}" class="text-decoration-none">
-                        <div class="status-card p-2 px-3 h-100 text-white">
-                            <div class="d-flex justify-content-between align-items-center">
+                        <div class="status-card p-3 h-100 text-white">
+                            <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="fw-bold mb-0" style="font-size: 0.85rem;">{{ row.label }}</h6>
-                                    <div class="text-white-50" style="font-size: 0.7rem;">{{ row.count }} Issues</div>
+                                    <div class="text-white-50 small text-uppercase" style="font-size: 0.65rem;">Status</div>
+                                    <h6 class="fw-bold mb-1">{{ row.label }}</h6>
+                                    <div class="text-white-50" style="font-size: 0.75rem;">{{ row.count }} Issues</div>
                                 </div>
-                                <div class="status-badge-count" style="font-size: 1rem; padding: 2px 8px;">{{ row.count }}</div>
+                                <div class="status-badge-count">{{ row.count }}</div>
                             </div>
                         </div>
                     </a>
@@ -202,7 +203,7 @@
         </div>
     </div>
 
-    <div class="glass-card p-4 mb-4" id="activity-section">
+    <div class="glass-card p-4 my-3" id="activity-section">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="text-white fw-bold mb-0">Recent Activity</h5>
             <span class="material-icons text-white-50">history</span>
