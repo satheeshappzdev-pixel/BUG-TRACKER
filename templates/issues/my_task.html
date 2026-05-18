@@ -239,8 +239,9 @@
         <div class="d-flex gap-2 mb-2 overflow-auto pb-1">
             <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
             <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
+            <a href="?status=dev_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'dev_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">Dev Progress</a>
             <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
-            <a href="?status=dev_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'dev_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">In Progress</a>
+            <a href="?status=qa_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'qa_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">QA Progress</a>
         </div>
     </div>
 

@@ -8,7 +8,7 @@ from django.views.generic import (
     DeleteView,
 )
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from issues.choices import IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices
+from issues.choices import IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, TeamMemberRoleChoices
 from issues.models import Issue, IssueRemarkLog, Project
 
 from .forms import TeamForm, TeamMemberForm
@@ -23,6 +23,8 @@ from django.views.generic import View
 import sqlite3
 import os
 from django.db import models
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'users/dashboard.html'
 
@@ -31,6 +33,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         project_id = self.request.GET.get('project')
         source = self.request.GET.get('source', 'ALL')
         page_number = self.request.GET.get('page', 1)  # Get current page number
+        user = self.request.user
+
+        # Safe Check: Prevent RelatedObjectDoesNotExist if user has no profile
+        if hasattr(user, 'team_member'):
+            role = user.team_member.role
+        else:
+            role = None
 
         context['projects'] = Project.objects.all()
         context['selected_project_id'] = project_id
@@ -49,8 +58,15 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             recent_activities_qs = recent_activities_qs.filter(issue__project_id=project_id)
         
         if source == 'MINE':
-            issues_qs = issues_qs.filter(assignee=self.request.user)
-            recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user)
+            if role == TeamMemberRoleChoices.QA:
+                issues_qs = issues_qs.filter(reporter=self.request.user)
+                recent_activities_qs = recent_activities_qs.filter(issue__reporter=self.request.user)
+            elif role == TeamMemberRoleChoices.DEVELOPER:
+                issues_qs = issues_qs.filter(assignee=self.request.user)
+                recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user)
+            else:
+                issues_qs = issues_qs.filter(assignee=self.request.user, reporter=self.request.user)
+                recent_activities_qs = recent_activities_qs.filter(issue__assignee=self.request.user, issue__reporter=self.request.user)
 
         # 3. Pagination Configuration (10 activities per page)
         paginator = Paginator(recent_activities_qs, 10)

@@ -467,7 +467,6 @@ class MyIssueListView(LoginRequiredMixin, ListView):
 
         # Apply Status Filter
         status = self.request.GET.get('status')
-        print("statusstatusstatusstatus", status)
         if status:
             if status == 'pending_qa':
                 qs = qs.filter(status='ready_for_qa')
