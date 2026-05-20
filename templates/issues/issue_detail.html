@@ -276,7 +276,11 @@
                     <label class="section-label">Assignee</label>
                     <div class="text-white d-flex align-items-center">
                         <span class="material-icons fs-5 me-2 text-primary">assignment_ind</span>
-                        {{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}
+                        {% if issue.assignee %}
+                            {{ issue.assignee.get_short_name|default:issue.assignee.username }}
+                        {% else %}
+                            Unassigned
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -284,7 +288,11 @@
                     <label class="section-label">Reporter</label>
                     <div class="text-white d-flex align-items-center">
                         <span class="material-icons fs-5 me-2 text-info">record_voice_over</span>
-                        {{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}
+                        {% if issue.reporter %}
+                            {{ issue.reporter.get_short_name|default:issue.reporter.username }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </div>
                 </div>
 

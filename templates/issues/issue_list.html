@@ -393,16 +393,35 @@
                             <div class="d-flex flex-wrap align-items-center gap-y-1 smaller text-white-50 pt-1" style="column-gap: 1.25rem !important;">
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="material-icons text-primary" style="font-size: 0.95rem;">person</span>
-                                    <span>Assignee: <strong class="text-white">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
+                                    <span>Assignee: 
+                                        <strong class="text-white">
+                                            {% if issue.assignee %}
+                                                {{ issue.assignee.get_short_name|default:issue.assignee.username }}
+                                            {% else %}
+                                                Unassigned
+                                            {% endif %}
+                                        </strong>
+                                    </span>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="material-icons text-info" style="font-size: 0.95rem;">campaign</span>
-                                    <span>Reporter: <strong class="text-white">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
+                                    <span>Reporter: 
+                                        <strong class="text-white">
+                                            {% if issue.reporter %}
+                                                {{ issue.reporter.get_short_name|default:issue.reporter.username }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </span>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="material-icons text-warning" style="font-size: 0.95rem;">layers</span>
                                     <span>Env: <strong class="text-white">{{ issue.get_environment_display }}</strong></span>
                                 </div>
+
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="material-icons text-success" style="font-size: 0.95rem;">schedule</span>
                                     <span>Updated: <strong class="text-white">{{ issue.updated_at|date:"M d, H:i" }}</strong></span>
