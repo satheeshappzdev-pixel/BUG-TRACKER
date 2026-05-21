@@ -163,7 +163,57 @@
     .react-tag-select select[multiple] {
         display: none;
     }
+
+    /* Complete Dark Theme Blending Variables Overrides for CKEditor */
+    :root {
+        --ck-color-base-background: #0b0f19 !important;
+        --ck-color-base-border: rgba(255, 255, 255, 0.1) !important;
+        --ck-color-toolbar-background: rgba(255, 255, 255, 0.04) !important;
+        --ck-color-toolbar-border: rgba(255, 255, 255, 0.08) !important;
+        --ck-color-text: #ffffff !important;
+        --ck-color-button-default-hover-background: rgba(255, 255, 255, 0.08) !important;
+        --ck-color-button-default-active-background: rgba(59, 130, 246, 0.25) !important;
+        --ck-color-button-on-background: rgba(59, 130, 246, 0.2) !important;
+        --ck-color-button-on-hover-background: rgba(59, 130, 246, 0.3) !important;
+        --ck-color-dropdown-panel-background: #0b0f19 !important;
+        --ck-color-dropdown-panel-border: rgba(255, 255, 255, 0.15) !important;
+        --ck-color-list-background: #0b0f19 !important;
+        --ck-color-list-button-hover-background: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .ck-editor__editable_inline {
+        min-height: 200px;
+        background: rgba(255, 255, 255, 0.02) !important;
+        color: #ffffff !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    .ck.ck-editor__top .ck-toolbar {
+        border-top-left-radius: 8px !important;
+        border-top-right-radius: 8px !important;
+    }
+
+    .ck.ck-editor__editable:not(.ck-editor__nested-editable).ck-focused {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+    }
+
+    .ck.ck-button, .ck.ck-dropdown__button {
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer !important;
+    }
+
+    .ck.ck-button.ck-on, .ck.ck-button.ck-on:not(.ck-disabled):hover {
+        color: #60a5fa !important;
+    }
+
+    .ck.ck-list__item .ck-button {
+        color: #ffffff !important;
+    }
 </style>
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/translations/en.js"></script> 
 {% endblock %}
 
 {% block dashboard_content %}
@@ -186,7 +236,7 @@
 {% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data" novalidate>
+<form method="post" enctype="multipart/form-data" novalidate id="issue-form">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
@@ -277,15 +327,15 @@
                 <div class="ms-2">
                     <span class="section-label">Collaboration Notes</span>
                     
-                    <div class="row g-0 g-md-4">
-                        <div class="col-12 col-md-6 mb-3 d-flex flex-column flex-md-row align-items-start align-items-md-start gap-1 gap-md-2">
-                            <label class="form-label horizontal-label pt-md-2" for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
+                    <div class="row g-0">
+                        <div class="col-12 mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-start gap-1 gap-md-3">
+                            <label class="form-label horizontal-label horizontal-label-wide pt-md-2" for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
                             <div class="flex-grow-1 w-100">
                                 {{ form.remarks }}
                             </div>
                         </div>
-                        <div class="col-12 col-md-6 mb-3 d-flex flex-column flex-md-row align-items-start align-items-md-start gap-1 gap-md-2">
-                            <label class="form-label horizontal-label pt-md-2" for="{{ form.qa_note.id_for_label }}">{{ form.qa_note.label }}</label>
+                        <div class="col-12 mb-2 d-flex flex-column flex-md-row align-items-start align-items-md-start gap-1 gap-md-3">
+                            <label class="form-label horizontal-label horizontal-label-wide pt-md-2" for="{{ form.qa_note.id_for_label }}">{{ form.qa_note.label }}</label>
                             <div class="flex-grow-1 w-100">
                                 {{ form.qa_note }}
                             </div>
@@ -407,5 +457,32 @@
         </div>
     </div>
 </form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Simple editor layout config mapping text features
+        const editorConfig = {
+            toolbar: [ 'heading', '|', 'bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList', 'insertTable', '|', 'undo', 'redo' ]
+        };
+
+        // Targets Description Box
+        const descriptionField = document.getElementById("{{ form.description.id_for_label }}");
+        if (descriptionField) {
+            ClassicEditor.create(descriptionField, editorConfig).catch(error => console.error(error));
+        }
+
+        // Targets Remarks Box
+        const remarksField = document.getElementById("{{ form.remarks.id_for_label }}");
+        if (remarksField) {
+            ClassicEditor.create(remarksField, editorConfig).catch(error => console.error(error));
+        }
+
+        // Targets QA Note Box
+        const qaField = document.getElementById("{{ form.qa_note.id_for_label }}");
+        if (qaField) {
+            ClassicEditor.create(qaField, editorConfig).catch(error => console.error(error));
+        }
+    });
+</script>
 {% endblock %}
 {% endblock %}

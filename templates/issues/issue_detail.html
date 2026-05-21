@@ -86,6 +86,22 @@
         padding: 1.25rem;
     }
 
+    /* Table styling rules inside rich text boxes */
+    .description-box table {
+        width: 100% !important;
+        margin: 1rem 0;
+        border-collapse: collapse;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .description-box th {
+        background-color: rgba(255, 255, 255, 0.07) !important;
+        font-weight: 600;
+    }
+    .description-box th, .description-box td {
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
     .drive-link-badge {
         background: linear-gradient(135deg, #3a61d0 0%, #4e73df 100%);
         transition: transform 0.2s ease;
@@ -153,7 +169,7 @@
 
             {% if issue.description %}
                 <h2 class="section-label">Description</h2>
-                <div class="description-box mb-4">{{ issue.description|linebreaks }}</div>
+                <div class="description-box mb-4">{{ issue.description|safe }}</div>
             {% endif %}
 
             {% if issue.drive_url %}
@@ -203,12 +219,12 @@
 
             {% if issue.remarks %}
                 <h2 class="section-label">Remarks</h2>
-                <div class="description-box mb-4">{{ issue.remarks|linebreaks }}</div>
+                <div class="description-box mb-4">{{ issue.remarks|safe }}</div>
             {% endif %}
 
             {% if issue.qa_note %}
                 <h2 class="section-label">QA Note</h2>
-                <div class="description-box mb-2" style="border-left: 4px solid #4e73df;">{{ issue.qa_note|linebreaks }}</div>
+                <div class="description-box mb-2" style="border-left: 4px solid #4e73df;">{{ issue.qa_note|safe }}</div>
             {% endif %}
         </div>
 
@@ -248,12 +264,12 @@
 
                             {% if log.remark %}
                                 <div class="text-white small mb-1 opacity-75">
-                                    <strong class="text-white-50">Remark:</strong> {{ log.remark|linebreaks }}
+                                    <strong class="text-white-50">Remark:</strong> <div>{{ log.remark|safe }}</div>
                                 </div>
                             {% endif %}
                             {% if log.qa_note %}
                                 <div class="text-white small mb-0 opacity-75">
-                                    <strong class="text-info opacity-75">QA Note:</strong> {{ log.qa_note|linebreaks }}
+                                    <strong class="text-info opacity-75">QA Note:</strong> <div>{{ log.qa_note|safe }}</div>
                                 </div>
                             {% endif %}
                         </div>

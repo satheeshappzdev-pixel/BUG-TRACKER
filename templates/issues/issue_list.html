@@ -118,6 +118,28 @@
         transform: rotate(180deg);
     }
 
+    /* Target inner rich-text container elements from CKEditor */
+    .rich-text-preview-container {
+        color: rgba(255, 255, 255, 0.75) !important;
+    }
+    .rich-text-preview-container table {
+        width: 100% !important;
+        margin: 0.75rem 0;
+        border-collapse: collapse;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .rich-text-preview-container th {
+        background-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    .rich-text-preview-container th, .rich-text-preview-container td {
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        font-size: 0.8rem;
+    }
+    .rich-text-preview-container p:last-child {
+        margin-bottom: 0;
+    }
+
     /* Ultra-Modern Sleek Pagination UI Component */
     .custom-pagination-container {
         display: flex;
@@ -339,7 +361,7 @@
         </div>
     </div>
 
-    {# --- SCROLLABLE CONTAINER FOR OPERATIONAL RECONDS GRID ARRAY --- #}
+    {# --- SCROLLABLE CONTAINER FOR OPERATIONAL RECORDS GRID ARRAY --- #}
     <div class="scrollable-issues-region mt-1">
         {% if issues %}
         <div class="row g-3">
@@ -434,8 +456,17 @@
                                 <div class="row g-3 mb-4">
                                     <div class="col-12">
                                         <div class="bg-dark bg-opacity-25 p-3 rounded border border-secondary border-opacity-10">
-                                            <span class="text-white-50 smaller fw-bold uppercase d-block mb-1">Description</span>
-                                            <p class="mb-0 smaller text-white-50 lh-base text-break" style="white-space: pre-wrap;">{{ issue.description|default:"No description provided." }}</p>
+                                            <span class="text-white-50 smaller fw-bold uppercase d-block mb-2">Description</span>
+                                            
+                                            {# Cleaned up container styling block and added safe injection filter #}
+                                            <div class="rich-text-preview-container text-break">
+                                                {% if issue.description %}
+                                                    {{ issue.description|safe }}
+                                                {% else %}
+                                                    <p class="mb-0 smaller text-white-50 italic opacity-50">No description provided.</p>
+                                                {% endif %}
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
