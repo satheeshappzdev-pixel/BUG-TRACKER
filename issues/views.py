@@ -171,14 +171,21 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
         project = form.save()
         return redirect('issues:project_detail', pk=project.pk)
     
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Issue, Project, IssueStatusChoices, IssuePriorityChoices, IssueEnvironmentChoices, IssueTypeChoices
+
 class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
-    paginate_by = 50  # <-- Set pagination limit to 50 items per page
+    paginate_by = 50  # Limit to 50 items per page
 
     def get_queryset(self):
-        qs = Issue.objects.select_related('project', 'assignee', 'reporter').prefetch_related('tags')
+        # Prefetch co_assignees to avoid N+1 query overhead in operational grid views
+        qs = Issue.objects.select_related('project', 'assignee', 'reporter', 'related_issue').prefetch_related('tags', 'co_assignees')
 
         search = self.request.GET.get('q', '').strip()
         if search:
@@ -227,7 +234,7 @@ class IssueListView(LoginRequiredMixin, ListView):
 
         source = self.request.GET.get('source')
         if source == 'MINE':
-            qs = qs.filter(Q(assignee=self.request.user) | Q(reporter=self.request.user))
+            qs = qs.filter(Q(assignee=self.request.user) | Q(reporter=self.request.user) | Q(co_assignees=self.request.user))
 
         assignee_id = self.request.GET.get('assignee')
         if assignee_id:
@@ -235,6 +242,14 @@ class IssueListView(LoginRequiredMixin, ListView):
                 qs = qs.filter(assignee=self.request.user)
             else:
                 qs = qs.filter(assignee_id=assignee_id)
+
+        # Handle Co-Assignee Query Filtering
+        co_assignee_id = self.request.GET.get('co_assignee')
+        if co_assignee_id:
+            if co_assignee_id == 'me':
+                qs = qs.filter(co_assignees=self.request.user)
+            else:
+                qs = qs.filter(co_assignees=co_assignee_id)
 
         reporter_id = self.request.GET.get('reporter')
         if reporter_id:
@@ -247,6 +262,7 @@ class IssueListView(LoginRequiredMixin, ListView):
         if assigned_only == '1':
             qs = qs.filter(assignee__isnull=False)
 
+        # Related Issue Filter Handler
         related_filter = self.request.GET.get('related_filter')
         if related_filter == 'has':
             qs = qs.filter(related_issue__isnull=False)
@@ -257,12 +273,12 @@ class IssueListView(LoginRequiredMixin, ListView):
         if related_issue_id:
             qs = qs.filter(related_issue_id=related_issue_id)
 
-        return qs
+        return qs.distinct() if (search or co_assignee_id or source == 'MINE') else qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Inject authorization attributes into the current page's slice dynamically
+        # Inject authorization attributes into current page slice dynamically
         for issue in context['issues']:
             issue.can_edit = issue.is_authorized(self.request.user)
 
@@ -279,14 +295,14 @@ class IssueListView(LoginRequiredMixin, ListView):
 
         # Dropdown data for filters
         context['projects'] = Project.objects.all()
+        
+        User = get_user_model()
         context['assignees'] = (
-            get_user_model()
-            .objects.filter(assigned_issues__isnull=False)
+            User.objects.filter(Q(assigned_issues__isnull=False) | Q(co_assigned_issues__isnull=False))
             .distinct()
         )
         context['reporters'] = (
-            get_user_model()
-            .objects.filter(reported_issues__isnull=False)
+            User.objects.filter(reported_issues__isnull=False)
             .distinct()
         )
         context['related_issues'] = Issue.objects.filter(
@@ -431,6 +447,14 @@ class IssueAddRemarkView(LoginRequiredMixin, View):
     def get(self, request, pk):
         return redirect('issues:issue_detail', pk=pk)
     
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
+# Assuming these imports exist in your project structure:
+# from .models import Issue, TeamMemberRoleChoices
+
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
@@ -446,14 +470,14 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         else:
             role = None
         
-        # Filter logic based on team assignment profile
+        # Filter logic based on team assignment profile (Including co_assignees where applicable)
         if role == TeamMemberRoleChoices.QA:
             qs = Issue.objects.filter(reporter=user)
         elif role == TeamMemberRoleChoices.DEVELOPER:
-            qs = Issue.objects.filter(assignee=user)
+            qs = Issue.objects.filter(Q(assignee=user) | Q(co_assignees=user))
         else:
-            # Fallback for Admins / Staff without an explicit profile: See both
-            qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user))
+            # Fallback for Admins / Staff without an explicit profile: See all connections
+            qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user) | Q(co_assignees=user))
 
         # Apply Time Filter
         date_filter = self.request.GET.get('date_filter')
@@ -465,15 +489,18 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         elif date_filter == 'month':
             qs = qs.filter(created_at__gte=now - timedelta(days=30))
 
-        # Apply Status Filter
+        # Apply Status / Assignment Filter
         status = self.request.GET.get('status')
         if status:
             if status == 'pending_qa':
                 qs = qs.filter(status='ready_for_qa')
+            elif status == 'co_assigned':
+                # Explicitly filter where user is a co-assignee
+                qs = qs.filter(co_assignees=user)
             else:
                 qs = qs.filter(status=status)
             
-        return qs.select_related('project', 'assignee', 'reporter').prefetch_related('tags').distinct().order_by('-created_at')
+        return qs.select_related('project', 'assignee', 'reporter').prefetch_related('tags', 'co_assignees').distinct().order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -497,9 +524,9 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         if role == TeamMemberRoleChoices.QA:
             metrics_qs = Issue.objects.filter(reporter=user)
         elif role == TeamMemberRoleChoices.DEVELOPER:
-            metrics_qs = Issue.objects.filter(assignee=user)
+            metrics_qs = Issue.objects.filter(Q(assignee=user) | Q(co_assignees=user))
         else:
-            metrics_qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user))
+            metrics_qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user) | Q(co_assignees=user))
 
         # Align metrics tracking indicators seamlessly with active timeline viewports
         date_filter = self.request.GET.get('date_filter')
@@ -512,11 +539,13 @@ class MyIssueListView(LoginRequiredMixin, ListView):
             metrics_qs = metrics_qs.filter(created_at__gte=now - timedelta(days=30))
 
         context['metrics'] = metrics_qs.aggregate(
-            total=Count('id'),
-            open=Count('id', filter=Q(status='open')),
-            pending_qa=Count('id', filter=Q(status='ready_for_qa')),
-            in_progress=Count('id', filter=Q(status='in_progress')),
-            critical=Count('id', filter=Q(priority='high'))
+            total=Count('id', distinct=True),
+            open=Count('id', filter=Q(status='open'), distinct=True),
+            pending_qa=Count('id', filter=Q(status='ready_for_qa'), distinct=True),
+            qa_in_progress=Count('id', filter=Q(status='qa_in_progress'), distinct=True),
+            dev_in_progress=Count('id', filter=Q(status='dev_in_progress'), distinct=True),
+            critical=Count('id', filter=Q(priority='high'), distinct=True),
+            co_assigned=Count('id', filter=Q(co_assignees=user), distinct=True)
         )
         
         context['current_status'] = self.request.GET.get('status', '')

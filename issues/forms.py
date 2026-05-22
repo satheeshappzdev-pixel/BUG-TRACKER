@@ -33,7 +33,6 @@ class ProjectForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-
 class IssueForm(forms.ModelForm):
     priority = forms.ChoiceField(
         choices=IssuePriorityChoices.choices,
@@ -52,9 +51,18 @@ class IssueForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
     assignee = UserModelChoiceField(
-        queryset=User.objects.all(),
+        queryset=User.objects.filter(is_superuser=False, is_active=True),
         widget=forms.Select(attrs={'class': 'form-select'}),
         required=False,
+    )
+    
+    # NEW: Enhanced Multi-Select Widget
+    # Added 'select2-multi' class so you can easily initialize Select2/TomSelect in UI
+    co_assignees = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_superuser=False, is_active=True),
+        widget=forms.SelectMultiple(attrs={'class': 'form-select select2-multi', 'multiple': 'multiple'}),
+        required=False,
+        help_text="Hold down Ctrl (or Cmd on Mac) to select multiple, or search above if enabled."
     )
 
     class Meta:
@@ -67,6 +75,7 @@ class IssueForm(forms.ModelForm):
             'issue_type',
             'reporter',
             'assignee',
+            'co_assignees',
             'priority',
             'environment',
             'status',
@@ -90,7 +99,7 @@ class IssueForm(forms.ModelForm):
             'assignee': forms.Select(attrs={'class': 'form-select'}),
             'time_estimate_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25'}),
             'related_issue': forms.Select(attrs={'class': 'form-select'}),
-            'tags': forms.SelectMultiple(attrs={"class": "form-select"}),
+            'tags': forms.SelectMultiple(attrs={"class": "form-select select2-multi"}), # Upgraded tags too
             'remarks': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'qa_note': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'image_1': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -105,6 +114,7 @@ class IssueForm(forms.ModelForm):
             self.fields['related_issue'].queryset = Issue.objects.filter(
                 issue_type=IssueTypeChoices.TASK
             )
+
 
 class IssueRemarkLogForm(forms.ModelForm):
     class Meta:

@@ -42,7 +42,6 @@ class Project(models.Model):
         if self.code:
             return f'{self.code} - {self.name}'
         return self.name
-
 class Issue(models.Model):
     project = models.ForeignKey(
         Project,
@@ -56,10 +55,11 @@ class Issue(models.Model):
         choices=IssueTypeChoices.choices,
         default=IssueTypeChoices.TASK,
     )
-    drive_url = models.CharField(max_length=500,
+    drive_url = models.CharField(
+        max_length=500,
         null=True,
         blank=True
-        )
+    )
 
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -74,8 +74,16 @@ class Issue(models.Model):
         null=True,
         blank=True,
         related_name='assigned_issues',
+        limit_choices_to={'is_superuser': False},
     )
     
+    co_assignees = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='co_assigned_issues',
+        help_text='Additional users assigned to this issue',
+        limit_choices_to={'is_superuser': False},
+    )
 
     priority = models.CharField(
         max_length=20,
@@ -146,15 +154,25 @@ class Issue(models.Model):
     def is_authorized(self, user):
         if not user or not user.is_authenticated:
             return False
+        
+        # 1. Check primary assignee
         if user == self.assignee:
             return True
+            
+        # 2. Check new co-assignees list
+        if self.co_assignees.filter(id=user.id).exists():
+            return True
+            
+        # 3. Check reporter
         if user == self.reporter:
             return True
+            
+        # 4. Check management roles
         team_member = getattr(user, 'team_member', None)
         if team_member and team_member.role in getattr(settings, 'MANAGEMENT_ROLES', []):
             return True
+            
         return False
-
 
 class IssueRemarkLog(models.Model):
     issue = models.ForeignKey(

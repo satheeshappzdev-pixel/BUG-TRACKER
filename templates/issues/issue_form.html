@@ -30,7 +30,7 @@
     }
 
     /* Premium Input Styling (Text, Select, and Textareas) */
-    .form-card input:not([type="checkbox"]),
+    .form-card input:not([type="checkbox"]):not([type="radio"]),
     .form-card select,
     .form-card textarea {
         background: rgba(255, 255, 255, 0.05) !important;
@@ -43,7 +43,7 @@
         width: 100%;
     }
 
-    .form-card input:not([type="checkbox"]):focus,
+    .form-card input:not([type="checkbox"]):not([type="radio"]):focus,
     .form-card select:focus,
     .form-card textarea:focus {
         background: rgba(255, 255, 255, 0.08) !important;
@@ -98,6 +98,40 @@
         }
     }
 
+    /* Custom Glass Dropdown Overrides for Custom Select Blocks */
+    .custom-glass-dropdown-menu {
+        background: #0b0f19 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        padding: 12px !important;
+        width: 100%;
+        min-width: 260px;
+    }
+
+    /* Custom Scrollable Matrix Box Design for Multi-Select Elements (Assignees, Co-Assignees, Tags) */
+    .custom-glass-multiselect-container {
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 6px;
+    }
+    .multiselect-scroll-area {
+        max-height: 160px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .multiselect-scroll-area::-webkit-scrollbar {
+        width: 4px;
+    }
+    .multiselect-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .multiselect-scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
     /* Tag Selector Matrix Refinements */
     .react-tag-select-display {
         display: flex;
@@ -112,39 +146,68 @@
     .react-tag-pill {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 50px;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.08);
         color: rgba(255, 255, 255, 0.6);
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.15s ease;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    .react-tag-pill:hover {
+        background: rgba(255, 255, 255, 0.08);
     }
 
-    .react-tag-pill input[type="checkbox"] {
-        width: 13px;
-        height: 13px;
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-        appearance: none;
-        -webkit-appearance: none;
+    .react-tag-pill input[type="checkbox"],
+    .react-tag-pill input[type="radio"] {
+        width: 14px;
+        height: 14px;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 4px !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
         cursor: pointer;
+        position: relative;
+        margin-top: 0;
     }
 
+    /* Checkbox & Radio States */
+    .react-tag-pill input[type="checkbox"]:checked,
+    .react-tag-pill input[type="radio"]:checked {
+        background-color: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        background-size: 100% 100% !important;
+    }
+    
     .react-tag-pill input[type="checkbox"]:checked {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
-        background-size: 100% 100%;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e") !important;
+    }
+    
+    .react-tag-pill input[type="radio"]:checked {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3ccircle cx='10' cy='10' r='5' fill='%23fff'/%3e%3c/svg%3e") !important;
+    }
+
+    /* Distinct Purple Branding Shift for Co-Assignees Checkboxes */
+    .react-tag-pill-purple input[type="checkbox"]:checked {
+        background-color: #a370f7 !important;
+        border-color: #a370f7 !important;
     }
 
     .react-tag-pill:has(input:checked) {
         background: rgba(59, 130, 246, 0.15);
         border-color: rgba(59, 130, 246, 0.4);
         color: #60a5fa;
+    }
+    
+    .react-tag-pill-purple:has(input:checked) {
+        background: rgba(163, 112, 247, 0.15);
+        border-color: rgba(163, 112, 247, 0.4);
+        color: #c084fc;
     }
 
     /* File Attachment Area Adjustments */
@@ -159,9 +222,9 @@
         color: rgba(255,255,255,0.6);
     }
 
-    /* Hide standard select array underneath tags selector elements */
-    .react-tag-select select[multiple] {
-        display: none;
+    /* Hide standard select layouts underneath our custom UI blocks */
+    .hide-native-select select {
+        display: none !important;
     }
 
     /* Complete Dark Theme Blending Variables Overrides for CKEditor */
@@ -194,7 +257,7 @@
         border-top-right-radius: 8px !important;
     }
 
-    .ck.ck-editor__editable:not(.ck-editor__nested-editable).ck-focused {
+    .ck.ck-focused {
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
     }
@@ -210,6 +273,74 @@
 
     .ck.ck-list__item .ck-button {
         color: #ffffff !important;
+    }
+
+    /* Inline Selected Tags Container Style */
+    .selected-inline-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 42px;
+    }
+    .inline-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .inline-tag-pill-blue {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: #60a5fa;
+    }
+    .inline-tag-pill-purple {
+        background: rgba(163, 112, 247, 0.2);
+        border: 1px solid rgba(163, 112, 247, 0.4);
+        color: #c084fc;
+    }
+    .inline-tag-remove {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        opacity: 0.7;
+        transition: opacity 0.15s ease;
+    }
+    .inline-tag-remove:hover {
+        opacity: 1;
+    }
+
+    /* Theme Matching Custom Dropdown Trigger Button */
+    .dropdown-select-trigger {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        border-radius: 8px !important;
+        padding: 8px 12px;
+        font-size: 0.875rem;
+        width: 100%;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .dropdown-select-trigger::after {
+        content: "";
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-size: 12px 10px;
+        width: 12px;
+        height: 10px;
+        display: inline-block;
+        border: none;
     }
 </style>
 <script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
@@ -279,19 +410,19 @@
 
                     <div class="row g-0 g-md-3 mt-1">
                         <div class="col-6 col-md-3 mb-2">
-                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                            <label class="form-label text-white-50 smaller smaller fw-bold uppercase mb-1" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
                             {{ form.status }}
                         </div>
                         <div class="col-6 col-md-3 mb-2">
-                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1" for="{{ form.priority.id_for_label }}">{{ form.priority.label }}</label>
+                            <label class="form-label text-white-50 smaller smaller fw-bold uppercase mb-1" for="{{ form.priority.id_for_label }}">{{ form.priority.label }}</label>
                             {{ form.priority }}
                         </div>
                         <div class="col-6 col-md-3 mb-2">
-                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1" for="{{ form.environment.id_for_label }}">{{ form.environment.label }}</label>
+                            <label class="form-label text-white-50 smaller smaller fw-bold uppercase mb-1" for="{{ form.environment.id_for_label }}">{{ form.environment.label }}</label>
                             {{ form.environment }}
                         </div>
                         <div class="col-6 col-md-3 mb-2">
-                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1" for="{{ form.issue_type.id_for_label }}">{{ form.issue_type.label }}</label>
+                            <label class="form-label text-white-50 smaller smaller fw-bold uppercase mb-1" for="{{ form.issue_type.id_for_label }}">{{ form.issue_type.label }}</label>
                             {{ form.issue_type }}
                         </div>
                     </div>
@@ -396,30 +527,122 @@
                         {% endwith %}
                     </div>
 
-                    {# Related Issue Reference Row #}
-                    <div class="mb-3">
-                        {% with field=form.related_issue %}
-                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1" for="{{ field.id_for_label }}">Related Issue</label>
-                            {{ field }}
+                    {# Co-Assignees Dropdown Component with Inner Search #}
+                    <div class="mb-3" id="co-assignees-search-container">
+                        {% with field=form.co_assignees %}
+                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1">Co-Assignees</label>
+                            <div class="hide-native-select">
+                                {{ field }}
+                                
+                                {# Inline Display Box for Selected Items #}
+                                <div class="selected-inline-container mb-2" id="co-assignees-selected-box"></div>
+                                
+                                {# Bootstrap Dropdown Wrapper Container #}
+                                <div class="dropdown">
+                                    <button class="btn dropdown-select-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Select Co-Assignees
+                                    </button>
+                                    <div class="dropdown-menu custom-glass-dropdown-menu">
+                                        {# Inner Search Input Field #}
+                                        <input type="text" class="form-control mb-2 py-1.5 fs-7 border-opacity-20" placeholder="Search co-assignees..." id="co-assignees-search-input">
+                                        
+                                        <div class="custom-glass-multiselect-container">
+                                            <div class="multiselect-scroll-area">
+                                                {% for opt in field.field.choices %}
+                                                    {% if opt.0 %}
+                                                        <label class="react-tag-pill react-tag-pill-purple matrix-option-row">
+                                                            <input type="checkbox" name="{{ field.name }}" value="{{ opt.0 }}"
+                                                                {% if opt.0|stringformat:"s" in field.value|stringformat:"s" or opt.0 in field.value %}checked{% endif %}>
+                                                            <span class="option-label-text">{{ opt.1 }}</span>
+                                                        </label>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if field.help_text %}<div class="form-text text-white-50 smaller mt-1 opacity-75">{{ field.help_text }}</div>{% endif %}
                         {% endwith %}
                     </div>
 
-                    {# Multi-Select Matrix Badges List Row #}
-                    <div class="mb-3">
+                    {# UPDATED: Related Issue Dropdown Search Selection Component (Single Select via Radio Elements) #}
+                    <div class="mb-3" id="related-issue-search-container">
+                        {% with field=form.related_issue %}
+                            <label class="form-label text-white-50 smaller fw-bold uppercase mb-1">Related Issue</label>
+                            <div class="hide-native-select">
+                                {{ field }}
+                                
+                                {# Inline Display Box for Selected Item #}
+                                <div class="selected-inline-container mb-2" id="related-issue-selected-box"></div>
+                                
+                                {# Bootstrap Dropdown Wrapper Container #}
+                                <div class="dropdown">
+                                    <button class="btn dropdown-select-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Select Related Issue
+                                    </button>
+                                    <div class="dropdown-menu custom-glass-dropdown-menu">
+                                        {# Inner Search Input Field #}
+                                        <input type="text" class="form-control mb-2 py-1.5 fs-7 border-opacity-20" placeholder="Search related issues..." id="related-issue-search-input">
+                                        
+                                        <div class="custom-glass-multiselect-container">
+                                            <div class="multiselect-scroll-area">
+                                                {# Explicit Empty Option Row to allow clearing selection #}
+                                                <label class="react-tag-pill matrix-option-row">
+                                                    <input type="radio" name="{{ field.name }}" value="" {% if not field.value %}checked{% endif %}>
+                                                    <span class="option-label-text text-white-50">None (Clear Selection)</span>
+                                                </label>
+                                                
+                                                {% for opt in field.field.choices %}
+                                                    {% if opt.0 %}
+                                                        <label class="react-tag-pill matrix-option-row">
+                                                            <input type="radio" name="{{ field.name }}" value="{{ opt.0 }}"
+                                                                {% if opt.0|stringformat:"s" == field.value|stringformat:"s" %}checked{% endif %}>
+                                                            <span class="option-label-text">{{ opt.1 }}</span>
+                                                        </label>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    </div>
+
+                    {# Multi-Select Tags Matrix Area Dropdown Component with Inner Search #}
+                    <div class="mb-3" id="tags-search-container">
                         {% with field=form.tags %}
                             <label class="form-label text-white-50 smaller fw-bold uppercase mb-1">Tags Matrix</label>
-                            <div class="react-tag-select">
+                            <div class="hide-native-select">
                                 {{ field }}
-                                <div class="react-tag-select-display">
-                                    {% for opt in field.field.choices %}
-                                        {% if opt.0 %}
-                                            <label class="react-tag-pill">
-                                                <input type="checkbox" name="{{ field.name }}" value="{{ opt.0 }}"
-                                                    {% if opt.0|stringformat:"s" in field.value|stringformat:"s" %}checked{% endif %}>
-                                                <span>{{ opt.1 }}</span>
-                                            </label>
-                                        {% endif %}
-                                    {% endfor %}
+                                
+                                {# Inline Display Box for Selected Items #}
+                                <div class="selected-inline-container mb-2" id="tags-selected-box"></div>
+                                
+                                {# Bootstrap Dropdown Wrapper Container #}
+                                <div class="dropdown">
+                                    <button class="btn dropdown-select-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        Select Tags
+                                    </button>
+                                    <div class="dropdown-menu custom-glass-dropdown-menu">
+                                        {# Inner Search Input Field #}
+                                        <input type="text" class="form-control mb-2 py-1.5 fs-7 border-opacity-20" placeholder="Search tags..." id="tags-search-input">
+                                        
+                                        <div class="custom-glass-multiselect-container">
+                                            <div class="multiselect-scroll-area">
+                                                {% for opt in field.field.choices %}
+                                                    {% if opt.0 %}
+                                                        <label class="react-tag-pill matrix-option-row">
+                                                            <input type="checkbox" name="{{ field.name }}" value="{{ opt.0 }}"
+                                                                {% if opt.0|stringformat:"s" in field.value|stringformat:"s" or opt.0 in field.value %}checked{% endif %}>
+                                                            <span class="option-label-text">{{ opt.1 }}</span>
+                                                        </label>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         {% endwith %}
@@ -482,6 +705,91 @@
         if (qaField) {
             ClassicEditor.create(qaField, editorConfig).catch(error => console.error(error));
         }
+
+        // --- Custom Interactive Search Select Engine Function (Handles both Checkboxes & Radios) ---
+        function initInteractiveSearchSelect(containerId, pillThemeClass, isMultiple = true) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const searchInput = container.querySelector('input[type="text"]');
+            const selectedBox = container.querySelector('.selected-inline-container');
+            const optionRows = container.querySelectorAll('.matrix-option-row');
+            const inputType = isMultiple ? 'input[type="checkbox"]' : 'input[type="radio"]';
+
+            // Synchronize and update the top inline tags box layout
+            function syncInlineDisplay() {
+                selectedBox.innerHTML = '';
+                let hasSelection = false;
+
+                optionRows.forEach(row => {
+                    const inputElement = row.querySelector(inputType);
+                    const labelText = row.querySelector('.option-label-text').textContent;
+
+                    // Skip the explicit placeholder row from generating pills
+                    if (inputElement.value === "") return;
+
+                    if (inputElement.checked) {
+                        hasSelection = true;
+                        
+                        // Construct the inline tag element
+                        const pill = document.createElement('span');
+                        pill.className = `inline-tag-pill ${pillThemeClass}`;
+                        pill.innerHTML = `
+                            <span>${labelText}</span>
+                            <span class="inline-tag-remove" data-value="${inputElement.value}">&times;</span>
+                        `;
+                        
+                        // Attach remove click listener handler event
+                        pill.querySelector('.inline-tag-remove').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (isMultiple) {
+                                inputElement.checked = false;
+                            } else {
+                                // For single-select radios, look for the empty value option row to fallback onto
+                                const emptyRadio = container.querySelector('input[type="radio"][value=""]');
+                                if (emptyRadio) emptyRadio.checked = true;
+                            }
+                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+                            syncInlineDisplay();
+                        });
+
+                        selectedBox.appendChild(pill);
+                    }
+                });
+
+                if (!hasSelection) {
+                    selectedBox.innerHTML = '<span class="text-white-50 opacity-50 smaller ps-1 pt-1">No item selected</span>';
+                }
+            }
+
+            // Real-time keyword filter algorithm layer
+            searchInput.addEventListener('input', function() {
+                const query = searchInput.value.toLowerCase().trim();
+                
+                optionRows.forEach(row => {
+                    const labelText = row.querySelector('.option-label-text').textContent.toLowerCase();
+                    if (labelText.includes(query) || row.querySelector(inputType).value === "") {
+                        row.style.setProperty('display', 'inline-flex', 'important');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            });
+
+            // Re-sync on option selection change inside scroll areas
+            optionRows.forEach(row => {
+                const inputElement = row.querySelector(inputType);
+                inputElement.addEventListener('change', syncInlineDisplay);
+            });
+
+            // Initial view generation call pass
+            syncInlineDisplay();
+        }
+
+        // Initialize all search dropdown selection fields cleanly
+        initInteractiveSearchSelect('co-assignees-search-container', 'inline-tag-pill-purple', true);
+        initInteractiveSearchSelect('tags-search-container', 'inline-tag-pill-blue', true);
+        initInteractiveSearchSelect('related-issue-search-container', 'inline-tag-pill-blue', false);
     });
 </script>
 {% endblock %}

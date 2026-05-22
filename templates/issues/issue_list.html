@@ -1,4 +1,5 @@
 {% extends "users/index.html" %}
+{% load text_filters %}
 
 {% block title %}Issues | Bug Tracker{% endblock %}
 
@@ -75,6 +76,7 @@
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         font-size: 0.75rem;
+        height: 34px;
     }
 
     /* Theme Matching for Dropdown Option Panels */
@@ -107,9 +109,12 @@
     }
 
     .search-container-refined {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
+        border-radius: 8px;
+        height: 34px;
+        display: flex;
+        align-items: center;
     }
     .Accordion-arrow-icon {
         transition: transform 0.2s ease-in-out;
@@ -259,20 +264,18 @@
 
         {# 2. Extensive Multi-Filter Section #}
         <div class="metric-card p-3 mb-1">
-            <form method="get" class="row g-2 align-items-end">
-                <div class="col-md-4 col-12">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Search</label>
-                    <div class="input-group input-group-sm search-container-refined p-1">
+                    <div class="search-container-refined px-2">
                         <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
-                               class="form-control bg-transparent border-0 text-white shadow-none" 
-                               placeholder="Title, project, code, reporter...">
-                        <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3">
-                            <span class="material-icons style-sm">search</span>
-                        </button>
+                               class="form-control form-control-sm bg-transparent border-0 text-white shadow-none p-0" 
+                               placeholder="Title, project, code...">
+                        <span class="material-icons text-white-50 ms-1" style="font-size: 16px;">search</span>
                     </div>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Project</label>
                     <select name="project" class="form-select form-select-sm filter-control">
                         <option value="">All Projects</option>
@@ -282,7 +285,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Status</label>
                     <select name="status" class="form-select form-select-sm filter-control">
                         <option value="">All Statuses</option>
@@ -292,7 +295,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Priority</label>
                     <select name="priority" class="form-select form-select-sm filter-control">
                         <option value="">All Priorities</option>
@@ -302,7 +305,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Type</label>
                     <select name="issue_type" class="form-select form-select-sm filter-control">
                         <option value="">All Types</option>
@@ -312,37 +315,50 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Environment</label>
                     <select name="environment" class="form-select form-select-sm filter-control">
-                        <option value="">All</option>
+                        <option value="">All Environments</option>
                         {% for value, label in IssueEnvironmentChoices.choices %}
                             <option value="{{ value }}" {% if request.GET.environment == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Assignee</label>
                     <select name="assignee" class="form-select form-select-sm filter-control">
                         <option value="">All</option>
+                        <option value="me" {% if request.GET.assignee == 'me' %}selected{% endif %}>Assigned to Me</option>
                         {% for user in assignees %}
                             <option value="{{ user.id }}" {% if request.GET.assignee == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
+                    <label class="text-white-50 small mb-1">Co-Assignee</label>
+                    <select name="co_assignee" class="form-select form-select-sm filter-control">
+                        <option value="">All</option>
+                        <option value="me" {% if request.GET.co_assignee == 'me' %}selected{% endif %}>Co-Assigned to Me</option>
+                        {% for user in assignees %}
+                            <option value="{{ user.id }}" {% if request.GET.co_assignee == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Reporter</label>
                     <select name="reporter" class="form-select form-select-sm filter-control">
                         <option value="">All</option>
+                        <option value="me" {% if request.GET.reporter == 'me' %}selected{% endif %}>Reported by Me</option>
                         {% for user in reporters %}
                             <option value="{{ user.id }}" {% if request.GET.reporter == user.id|stringformat:"s" %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-xl-2 col-md-3 col-sm-6">
                     <label class="text-white-50 small mb-1">Related Issue</label>
                     <select name="related_filter" class="form-select form-select-sm filter-control">
                         <option value="">Any</option>
@@ -351,10 +367,11 @@
                     </select>
                 </div>
 
-                <div class="col-md-4 col-sm-12 d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Apply Filters</button>
-                    <a href="{% url 'issues:issue_list' %}" class="btn btn-sm btn-outline-secondary text-white px-3">
-                        <span class="material-icons fs-6 align-middle">refresh</span>
+                {# Unified Operation Buttons Column Block #}
+                <div class="col-xl-4 col-md-6 col-12 ms-auto d-flex align-items-center justify-content-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold w-100" style="height: 34px;">Apply Filters</button>
+                    <a href="{% url 'issues:issue_list' %}" class="btn btn-sm btn-outline-secondary text-white d-flex align-items-center justify-content-center px-3" style="height: 34px; width: 44px;">
+                        <span class="material-icons fs-6">refresh</span>
                     </a>
                 </div>
             </form>
@@ -390,6 +407,14 @@
                                             {{ issue.get_issue_type_display }}
                                         </span>
                                         <span class="badge bg-secondary smaller opacity-75 ms-1">{{ issue.get_priority_display }} Priority</span>
+                                        
+                                        {# Related Issue Indicator Indicator Tag #}
+                                        {% if issue.related_issue %}
+                                            <span class="badge bg-info bg-opacity-10 text-info smaller px-2 py-0 border border-info border-opacity-25 d-inline-flex align-items-center gap-1" style="font-size: 0.65rem;">
+                                                <span class="material-icons" style="font-size: 10px;">link</span>
+                                                Related
+                                            </span>
+                                        {% endif %}
                                     </div>
                                     <h6 class="fw-bold mb-0 text-white">
                                         {{ issue.title }}
@@ -425,6 +450,21 @@
                                         </strong>
                                     </span>
                                 </div>
+
+                                {# Dynamic Co-Assignees Rendering Meta Grid Block #}
+                                {% if issue.co_assignees.all %}
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="material-icons text-purple align-middle" style="font-size: 0.95rem; color: #a370f7;">group</span>
+                                    <span class="me-1">Co-Assignees:</span>
+                                    <div class="d-inline-flex flex-wrap gap-1 align-middle">
+                                        {% for user in issue.co_assignees.all %}
+                                            <span class="badge rounded-pill px-2 py-1" style="font-size: 0.65rem; color: #c084fc; background-color: rgba(163, 112, 247, 0.1); border: 1px solid rgba(163, 112, 247, 0.25);">
+                                                {{ user.get_short_name|default:user.username }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
 
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="material-icons text-info" style="font-size: 0.95rem;">campaign</span>

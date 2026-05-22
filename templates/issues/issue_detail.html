@@ -69,6 +69,21 @@
         transform: translateY(-1px);
     }
 
+    /* Premium Purple Pill Overrides for Co-Assignees Layout Display */
+    .issue-tag-pill-purple {
+        background: rgba(163, 112, 247, 0.15) !important;
+        border: 1px solid rgba(163, 112, 247, 0.3) !important;
+        font-size: 0.7rem;
+        padding: 4px 12px;
+        border-radius: 50px;
+        color: #c084fc;
+        transition: all 0.2s ease;
+    }
+    .issue-tag-pill-purple:hover {
+        background: rgba(163, 112, 247, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
     .section-label {
         color: rgba(255, 255, 255, 0.5);
         font-size: 0.75rem;
@@ -299,6 +314,18 @@
                         {% endif %}
                     </div>
                 </div>
+
+                {# Co-Assignees Sidebar Section Layout #}
+                <div>
+                    <label class="section-label">Co-Assignees</label>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for user in issue.co_assignees.all %}
+                            <span class="issue-tag-pill-purple">{{ user.get_short_name|default:user.username }}</span>
+                        {% empty %}
+                            <span class="text-white-50 smaller">No co-assignees</span>
+                        {% endfor %}
+                    </div>
+                </div>
                 
                 <div>
                     <label class="section-label">Reporter</label>
@@ -308,6 +335,21 @@
                             {{ issue.reporter.get_short_name|default:issue.reporter.username }}
                         {% else %}
                             -
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Related Issue Sidebar Link Block Matrix #}
+                <div>
+                    <label class="section-label">Related Issue</label>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% if issue.related_issue %}
+                            <a href="{% url 'issues:issue_detail' issue.related_issue.pk %}" class="issue-tag-pill text-decoration-none d-inline-flex align-items-center gap-1">
+                                <span class="material-icons" style="font-size: 12px;">link</span>
+                                {{ issue.related_issue.title }}
+                            </a>
+                        {% else %}
+                            <span class="text-white-50 smaller">None</span>
                         {% endif %}
                     </div>
                 </div>

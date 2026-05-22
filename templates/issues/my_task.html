@@ -196,8 +196,8 @@
             </div>
         </div>
 
-        {# Top Metric Row (All 5 Statuses) #}
-        <div class="row g-3 mb-3">
+        {# Top Metric Row (All Statuses + Co-Assigned) #}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 mb-3">
             <div class="col">
                 <div class="metric-box">
                     <i class="material-icons text-primary">analytics</i>
@@ -228,6 +228,13 @@
             </div>
             <div class="col">
                 <div class="metric-box">
+                    <i class="material-icons text-purple" style="color: #a370f7;">group</i>
+                    <h3 class="text-white">{{ metrics.co_assigned|default:0 }}</h3>
+                    <div class="metric-label">CO-ASSIGNED</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
                     <i class="material-icons text-danger">report_problem</i>
                     <h3 class="text-white">{{ metrics.critical|default:0 }}</h3>
                     <div class="metric-label">CRITICAL</div>
@@ -242,6 +249,7 @@
             <a href="?status=dev_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'dev_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">Dev Progress</a>
             <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
             <a href="?status=qa_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'qa_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">QA Progress</a>
+            <a href="?status=co_assigned&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'co_assigned' %}btn-secondary text-white{% else %}btn-outline-light text-white{% endif %}" style="{% if current_status == 'co_assigned' %}background-color: #a370f7; border-color: #a370f7; color: #fff !important;{% endif %}">Co-Assigned</a>
         </div>
     </div>
 
@@ -301,6 +309,22 @@
                                 <span class="material-icons text-primary" style="font-size: 0.95rem;">person</span>
                                 <span>Assignee: <strong class="text-white">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
                             </div>
+                            
+                            {# Co-Assignees Rounded Pill Tag Component Placement #}
+                            {% if issue.co_assignees.all %}
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="material-icons text-purple align-middle" style="font-size: 0.95rem; color: #a370f7;">group</span>
+                                <span class="me-1">Co-Assignees:</span>
+                                <div class="d-inline-flex flex-wrap gap-1 align-middle">
+                                    {% for user in issue.co_assignees.all %}
+                                        <span class="badge rounded-pill px-2 py-1" style="font-size: 0.65rem; color: #c084fc; background-color: rgba(163, 112, 247, 0.1); border: 1px solid rgba(163, 112, 247, 0.25);">
+                                            {{ user.get_short_name|default:user.username }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <div class="d-flex align-items-center gap-1">
                                 <span class="material-icons text-info" style="font-size: 0.95rem;">campaign</span>
                                 <span>Reporter: <strong class="text-white">{{ issue.reporter.get_short_name|default:issue.reporter.username|default:"-" }}</strong></span>
