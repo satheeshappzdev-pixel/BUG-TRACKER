@@ -41,6 +41,14 @@ class ProjectListView(LoginRequiredMixin, ListView):
         return Project.objects.select_related('owner', 'team').all()
 
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
+from django.db.models import Count, Q
+from django.utils import timezone
+from datetime import timedelta
+from issues.models import Project  # Adjust import paths based on your architecture
+from issues.choices import IssueStatusChoices, IssuePriorityChoices, IssueTypeChoices
+
 class ProjectDetailView(LoginRequiredMixin, DetailView):
     model = Project
     template_name = 'issues/project_detail.html'
@@ -53,30 +61,45 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
         
-        # 1. Time Filtering Logic
+        # 1. Period & Status Filtering Query Parameter Reading
         period = self.request.GET.get('period', 'all')
+        current_status = self.request.GET.get('status', '')  # Dynamic Status Metric Filter Hook
         now = timezone.now()
-        issues_qs = project.issues.select_related('assignee', 'reporter', 'assignee__team_member', 'reporter__team_member')
+        
+        issues_qs = project.issues.select_related(
+            'assignee', 'reporter', 'assignee__team_member', 'reporter__team_member'
+        )
 
+        # Apply Period Constraints
         if period == 'daily':
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            filtered_qs = issues_qs.filter(created_at__gte=start_date)
+            issues_qs = issues_qs.filter(created_at__gte=start_date)
         elif period == 'weekly':
             start_date = now - timedelta(days=7)
-            filtered_qs = issues_qs.filter(created_at__gte=start_date)
-        else:
-            filtered_qs = issues_qs
+            issues_qs = issues_qs.filter(created_at__gte=start_date)
 
-        # 2. Status Annotation Helper
+        # 2. Dynamic Status Annotation Helper
         status_choices = IssueStatusChoices.choices
         status_annotations = {
             f"{status.lower()}_count": Count('id', filter=Q(status=status)) 
             for status, label in status_choices
         }
+        
+        # Calculate overall metrics before applying specific page filters to recent streams
+        aggregated_metrics = issues_qs.aggregate(
+            total=Count('id'), 
+            high_priority=Count('id', filter=Q(priority__in=['high', 'critical'])), 
+            **status_annotations
+        )
 
-        # 3. Developer Summary (Grouped by Assignee)
-        # Filters for High/Critical priority and excludes completed/QA statuses
-        dev_summary_qs = filtered_qs.values(
+        # 3. Apply Card Status Click Filtering Rule to Recent Stream
+        if current_status:
+            filtered_qs = issues_qs.filter(status=current_status)
+        else:
+            filtered_qs = issues_qs
+
+        # 4. Developer Summary (Grouped by Assignee)
+        dev_summary_qs = issues_qs.values(
             'assignee__username', 'assignee__id', 'assignee__first_name', 'assignee__last_name'
         ).annotate(
             total=Count('id'),
@@ -89,9 +112,8 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
             Q(assignee__team_member__role='developer') | Q(assignee__team_member__role__isnull=True)
         ).exclude(assignee__team_member__role='qa').order_by('-total')
 
-        # 4. QA Summary (Grouped by Reporter)
-        # Filters for High/Critical priority issues reported by them that are ready_for_qa
-        qa_summary_qs = filtered_qs.values(
+        # 5. QA Summary (Grouped by Reporter)
+        qa_summary_qs = issues_qs.values(
             'reporter__username', 'reporter__id', 'reporter__first_name', 'reporter__last_name'
         ).annotate(
             total=Count('id'),
@@ -102,31 +124,22 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
             **status_annotations
         ).filter(reporter__team_member__role='qa').order_by('-total')
 
-        # 5. Transformation Logic
+        # 6. Summary Pipeline Transformation Logic
         def process_summary(summary_qs, user_prefix, is_qa=False):
             processed = []
             for entry in summary_qs:
                 u_id = entry.get(f'{user_prefix}__id')
                 if not u_id: continue
 
-                # --- CUSTOM PENDING LOGIC ---
                 if is_qa:
-                    # For QA, "Pending" are high/critical priority issues THEY reported that are now READY FOR QA
                     entry['pending_label'] = "Ready for QA (High/Critical)"
-                    entry['total_pending_all_time'] = project.issues.filter(
-                        reporter_id=u_id, 
-                        status='ready_for_qa',
-                        priority__in=['high', 'critical']
-                    ).count()
+                    entry['total_pending_all_time'] = project.issues.filter(reporter_id=u_id, status='ready_for_qa').count()
                 else:
-                    # For Devs, "Pending" is their overall high/critical priority workload (not done/closed)
                     entry['pending_label'] = "Total Workload (High/Critical)"
-                    entry['total_pending_all_time'] = project.issues.filter(
-                        assignee_id=u_id,
-                        priority__in=['high', 'critical']
-                    ).exclude(status__in=['done', 'closed', 'ready_for_qa', 'qa_in_progress', 'rejected']).count()
+                    entry['total_pending_all_time'] = project.issues.filter(assignee_id=u_id).exclude(
+                        status__in=['done', 'closed', 'ready_for_qa', 'qa_in_progress', 'rejected']
+                    ).count()
 
-                # Name & Status Lists
                 first = entry.get(f'{user_prefix}__first_name')
                 last = entry.get(f'{user_prefix}__last_name')
                 entry['full_display_name'] = f"{first} {last}" if first and last else (first or entry.get(f'{user_prefix}__username'))
@@ -138,16 +151,34 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
                 processed.append(entry)
             return processed
 
+        # Rebuild layout payload mapping array to handle hyperlinked interface triggers safely
+        dynamic_status_cards = []
+        for slug, label in status_choices:
+            count_key = f"{slug.lower()}_count"
+            dynamic_status_cards.append({
+                'label': label.upper(),
+                'count': aggregated_metrics.get(count_key, 0),
+                'slug': slug.lower()
+            })
+
+        # Safe python-side replacement mapping to clear template errors
+        current_status_display = current_status.replace('_', ' ').title() if current_status else ''
+
         context.update({
             'dev_summary': process_summary(dev_summary_qs, 'assignee', is_qa=False),
             'qa_summary': process_summary(qa_summary_qs, 'reporter', is_qa=True),
             'issues': filtered_qs.order_by('-created_at')[:10],
-            'metrics': filtered_qs.aggregate(total=Count('id'), high_priority=Count('id', filter=Q(priority__in=['high', 'critical'])), **status_annotations),
+            'metrics': aggregated_metrics,
+            'dynamic_status_cards': dynamic_status_cards,
             'current_period': period,
-            'status_choices': status_choices
+            'current_status': current_status,  
+            'current_status_display': current_status_display, # Safe display string
+            'status_choices': status_choices,
+            'IssueStatusChoices': IssueStatusChoices,
+            'IssuePriorityChoices': IssuePriorityChoices,
+            'IssueTypeChoices': IssueTypeChoices,
         })
         return context
-
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
@@ -466,7 +497,7 @@ class IssueAddRemarkView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         return redirect('issues:issue_detail', pk=pk)
-    
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.db.models import Q, Count
@@ -474,6 +505,7 @@ from django.utils import timezone
 from datetime import timedelta
 # Assuming these imports exist in your project structure:
 # from .models import Issue, TeamMemberRoleChoices
+
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
@@ -552,12 +584,20 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         elif date_filter == 'month':
             metrics_qs = metrics_qs.filter(created_at__gte=now - timedelta(days=30))
 
+        # UPDATED: Added tracking evaluation metrics for ALL pipeline variants without breaking original logic paths
         context['metrics'] = metrics_qs.aggregate(
             total=Count('id', distinct=True),
             open=Count('id', filter=Q(status='open'), distinct=True),
+            dev_in_progress=Count('id', filter=Q(status='dev_in_progress'), distinct=True),
             pending_qa=Count('id', filter=Q(status='ready_for_qa'), distinct=True),
             qa_in_progress=Count('id', filter=Q(status='qa_in_progress'), distinct=True),
-            dev_in_progress=Count('id', filter=Q(status='dev_in_progress'), distinct=True),
+            in_review=Count('id', filter=Q(status='in_review'), distinct=True),
+            hold=Count('id', filter=Q(status='hold'), distinct=True),
+            scope_review=Count('id', filter=Q(status='scope_review'), distinct=True),
+            rejected=Count('id', filter=Q(status='rejected'), distinct=True),
+            done=Count('id', filter=Q(status='done'), distinct=True),
+            closed=Count('id', filter=Q(status='closed'), distinct=True),
+            reopen=Count('id', filter=Q(status='reopen'), distinct=True),
             critical=Count('id', filter=Q(priority='high'), distinct=True),
             co_assigned=Count('id', filter=Q(co_assignees=user), distinct=True)
         )
@@ -566,20 +606,15 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         context['current_date_filter'] = self.request.GET.get('date_filter', 'all')
 
         # --- Dynamic UI Dropdown Permission Engine ---
-        # Fetch human-readable choices dictionary from your model layer choices
         all_choices = dict(Issue.StatusChoices.choices if hasattr(Issue, 'StatusChoices') else IssueStatusChoices.choices)
         
         if role == TeamMemberRoleChoices.DEVELOPER:
-            # Developers can transition items to active work or hand off to QA
             allowed_keys = ['open' ,'dev_in_progress', 'in_review', 'hold', 'ready_for_qa', ]
         elif role == TeamMemberRoleChoices.QA:
-            # QA can manage verification stages, reject issues, or close/complete tasks
             allowed_keys = ['open' ,'qa_in_progress', 'hold', 'scope_review', 'rejected', 'done', 'closed', 'reopen']
         else:
-            # Staff or Admin fallbacks have access to the full pipeline status set
             allowed_keys = list(all_choices.keys())
 
-        # Construct filtered tuple-list structure passed down directly to dropdown renderer
         context['status_choices'] = [(key, all_choices[key]) for key in allowed_keys if key in all_choices]
         
         return context

@@ -73,18 +73,23 @@
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 1rem;
+        padding: 0.75rem 0.5rem;
         text-align: center;
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     .metric-box:hover {
-        transform: translateY(-5px);
+        transform: translateY(-3px);
         background: rgba(255, 255, 255, 0.12) !important;
         border-color: rgba(255, 255, 255, 0.3);
     }
-    .metric-box i { font-size: 20px; opacity: 0.8; }
-    .metric-box h3 { font-weight: 700; margin: 5px 0; }
-    .metric-label { font-size: 0.65rem; color: rgba(255,255,255,0.5); font-weight: 700; }
+    .metric-box i { font-size: 18px; opacity: 0.8; }
+    .metric-box h3 { font-weight: 700; margin: 3px 0; font-size: 1.2rem; }
+    .metric-label { font-size: 0.6rem; color: rgba(255,255,255,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .issue-tag-pill {
         background: rgba(59, 130, 246, 0.1);
@@ -110,6 +115,7 @@
     /* Ultra-Modern Sleek Pagination UI Component */
     .custom-pagination-container {
         display: flex;
+        justify-box: space-between;
         justify-content: space-between;
         align-items: center;
         margin-top: 2rem;
@@ -209,6 +215,14 @@
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
+
+    /* Dynamic responsive sizing for handling 14 dashboard metric items nicely */
+    @media (min-width: 1400px) {
+        .row-cols-xxl-7 > * {
+            flex: 0 0 auto;
+            width: 14.28571429%;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -264,7 +278,8 @@
             </div>
         </div>
 
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 mb-3">
+        {# Metric Grid Section: Render all metrics cards seamlessly across rows #}
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 row-cols-xxl-7 g-2 mb-3">
             <div class="col">
                 <div class="metric-box">
                     <i class="material-icons text-primary">analytics</i>
@@ -281,6 +296,13 @@
             </div>
             <div class="col">
                 <div class="metric-box">
+                    <i class="material-icons text-warning">sync</i>
+                    <h3 class="text-white">{{ metrics.dev_in_progress|default:0 }}</h3>
+                    <div class="metric-label">DEV PROGRESS</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
                     <i class="material-icons text-success">fact_check</i>
                     <h3 class="text-white">{{ metrics.pending_qa|default:0 }}</h3>
                     <div class="metric-label">READY QA</div>
@@ -288,9 +310,58 @@
             </div>
             <div class="col">
                 <div class="metric-box">
-                    <i class="material-icons text-warning">sync</i>
-                    <h3 class="text-white">{{ metrics.dev_in_progress|default:0 }}</h3>
-                    <div class="metric-label">IN PROGRESS</div>
+                    <i class="material-icons text-warning" style="color: #fd7e14 !important;">flaky</i>
+                    <h3 class="text-white">{{ metrics.qa_in_progress|default:0 }}</h3>
+                    <div class="metric-label">QA PROGRESS</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-info" style="color: #bb86fc !important;">rate_review</i>
+                    <h3 class="text-white">{{ metrics.in_review|default:0 }}</h3>
+                    <div class="metric-label">IN REVIEW</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-secondary">pause_circle</i>
+                    <h3 class="text-white">{{ metrics.hold|default:0 }}</h3>
+                    <div class="metric-label">HOLD</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-warning" style="color: #ff758f !important;">gavel</i>
+                    <h3 class="text-white">{{ metrics.scope_review|default:0 }}</h3>
+                    <div class="metric-label">SCOPE REVIEW</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-danger" style="opacity: 0.7;">cancel</i>
+                    <h3 class="text-white">{{ metrics.rejected|default:0 }}</h3>
+                    <div class="metric-label">REJECTED</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-success" style="color: #03dac6 !important;">check_circle</i>
+                    <h3 class="text-white">{{ metrics.done|default:0 }}</h3>
+                    <div class="metric-label">DONE</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-muted" style="opacity: 0.6;">archive</i>
+                    <h3 class="text-white">{{ metrics.closed|default:0 }}</h3>
+                    <div class="metric-label">CLOSED</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="metric-box">
+                    <i class="material-icons text-info" style="color: #ffb703 !important;">published_with_changes</i>
+                    <h3 class="text-white">{{ metrics.reopen|default:0 }}</h3>
+                    <div class="metric-label">REOPEN</div>
                 </div>
             </div>
             <div class="col">
@@ -309,12 +380,20 @@
             </div>
         </div>
 
-        <div class="d-flex gap-2 mb-2 overflow-auto pb-1">
+        {# Filter Pills Section: Modified to support filtering across all options smoothly #}
+        <div class="d-flex gap-2 mb-2 overflow-auto pb-1 flex-wrap">
             <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
             <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
             <a href="?status=dev_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'dev_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">Dev Progress</a>
             <a href="?status=pending_qa&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'pending_qa' %}btn-success text-dark{% else %}btn-outline-success text-white{% endif %}">Pending QA</a>
             <a href="?status=qa_in_progress&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'qa_in_progress' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">QA Progress</a>
+            <a href="?status=in_review&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'in_review' %}btn-primary text-white{% else %}btn-outline-primary text-white{% endif %}">In Review</a>
+            <a href="?status=hold&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'hold' %}btn-secondary text-white{% else %}btn-outline-secondary text-white{% endif %}">Hold</a>
+            <a href="?status=scope_review&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'scope_review' %}bg-danger text-white{% else %}btn-outline-danger text-white{% endif %}" style="{% if current_status == 'scope_review' %}background-color: #ff758f; border-color: #ff758f;{% endif %}">Scope Review</a>
+            <a href="?status=rejected&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'rejected' %}bg-danger text-white{% else %}btn-outline-danger text-white{% endif %}">Rejected</a>
+            <a href="?status=done&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'done' %}btn-success text-white{% else %}btn-outline-success text-white{% endif %}">Done</a>
+            <a href="?status=closed&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'closed' %}btn-light text-dark{% else %}btn-outline-light text-white{% endif %}">Closed</a>
+            <a href="?status=reopen&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'reopen' %}btn-warning text-dark{% else %}btn-outline-warning text-white{% endif %}">Reopen</a>
             <a href="?status=co_assigned&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'co_assigned' %}btn-secondary text-white{% else %}btn-outline-light text-white{% endif %}" style="{% if current_status == 'co_assigned' %}background-color: #a370f7; border-color: #a370f7; color: #fff !important;{% endif %}">Co-Assigned</a>
         </div>
     </div>

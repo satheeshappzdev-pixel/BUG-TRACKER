@@ -123,9 +123,9 @@ class IssueForm(forms.ModelForm):
             all_status_choices = list(IssueStatusChoices.choices)
 
             if role == TeamMemberRoleChoices.DEVELOPER:
-                allowed_statuses = ['open', 'dev_in_progress', 'ready_for_qa', 'reopen']
+                allowed_statuses = ['open', 'dev_in_progress', 'hold', 'scope_review', 'rejected',  'reopen']
             elif role == TeamMemberRoleChoices.QA:
-                allowed_statuses = ['ready_for_qa', 'qa_in_progress', 'in_review', 'hold', 'scope_review', 'rejected', 'done', 'closed']
+                allowed_statuses = ['open', 'ready_for_qa', 'qa_in_progress',  'done', 'closed' ,  'reopen']
             else:
                 # If staff/admin or fallback role, preserve all options
                 allowed_statuses = [choice[0] for choice in all_status_choices]
