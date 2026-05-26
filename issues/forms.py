@@ -1,7 +1,7 @@
 from django import forms
 
 from .models import Project, Issue, IssueRemarkLog
-from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, UserModelChoiceField
+from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, TeamMemberRoleChoices, UserModelChoiceField
 from .models import Tag
 from django.contrib.auth import get_user_model
 
@@ -33,6 +33,7 @@ class ProjectForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+
 class IssueForm(forms.ModelForm):
     priority = forms.ChoiceField(
         choices=IssuePriorityChoices.choices,
@@ -50,14 +51,13 @@ class IssueForm(forms.ModelForm):
         choices=IssueTypeChoices.choices,
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
-    assignee = UserModelChoiceField(
+    assignee = forms.ModelChoiceField(  # Using standard ModelChoiceField or your custom UserModelChoiceField
         queryset=User.objects.filter(is_superuser=False, is_active=True),
         widget=forms.Select(attrs={'class': 'form-select'}),
         required=False,
     )
     
     # NEW: Enhanced Multi-Select Widget
-    # Added 'select2-multi' class so you can easily initialize Select2/TomSelect in UI
     co_assignees = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_superuser=False, is_active=True),
         widget=forms.SelectMultiple(attrs={'class': 'form-select select2-multi', 'multiple': 'multiple'}),
@@ -94,12 +94,10 @@ class IssueForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'drive_url': forms.TextInput(attrs={'class': 'form-control'}),
-            'issue_type': forms.Textarea(attrs={'class': 'form-control'}),
             'reporter': forms.Select(attrs={'class': 'form-select'}),
-            'assignee': forms.Select(attrs={'class': 'form-select'}),
             'time_estimate_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25'}),
             'related_issue': forms.Select(attrs={'class': 'form-select'}),
-            'tags': forms.SelectMultiple(attrs={"class": "form-select select2-multi"}), # Upgraded tags too
+            'tags': forms.SelectMultiple(attrs={"class": "form-select select2-multi"}),
             'remarks': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'qa_note': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'image_1': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -109,11 +107,33 @@ class IssueForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Extract the user object cleanly before instantiating the form fields
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # 1. Filter the related tasks queryset
         if 'related_issue' in self.fields:
             self.fields['related_issue'].queryset = Issue.objects.filter(
                 issue_type=IssueTypeChoices.TASK
             )
+
+        # 2. Dynamic Status filtering based on team member roles
+        if user and hasattr(user, 'team_member'):
+            role = user.team_member.role
+            all_status_choices = list(IssueStatusChoices.choices)
+
+            if role == TeamMemberRoleChoices.DEVELOPER:
+                allowed_statuses = ['open', 'dev_in_progress', 'ready_for_qa', 'reopen']
+            elif role == TeamMemberRoleChoices.QA:
+                allowed_statuses = ['ready_for_qa', 'qa_in_progress', 'in_review', 'hold', 'scope_review', 'rejected', 'done', 'closed']
+            else:
+                # If staff/admin or fallback role, preserve all options
+                allowed_statuses = [choice[0] for choice in all_status_choices]
+
+            # Re-assign filtered options to the active choice field
+            self.fields['status'].choices = [
+                (value, label) for value, label in all_status_choices if value in allowed_statuses
+            ]
 
 
 class IssueRemarkLogForm(forms.ModelForm):

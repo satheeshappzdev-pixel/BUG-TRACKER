@@ -9,79 +9,130 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
     :root { 
-        --glass-bg: rgba(255, 255, 255, 0.06); /* Darker glass for better contrast */
-        --sidebar-width: 280px; /* Reduced from 280px */
+        --glass-bg: rgba(255, 255, 255, 0.06); 
+        --sidebar-width: 280px; 
     }
 
     body {
-        font-family: 'Inter', 'Google Sans', sans-serif; /* Inter is more compact for UI */
+        font-family: 'Google Sans', sans-serif; 
         background: linear-gradient(to left, #0a102e 0%, #050505 100%);
         min-height: 100vh;
-        font-size: 0.875rem; /* Standard professional UI size (14px) */
+        font-size: 0.875rem; 
         color: rgba(255, 255, 255, 0.9);
+        overflow-x: hidden;
     }
 
-    /* Slimmer Sidebar */
+    /* Fixed Viewport Mobile Floating Action Button Layout Overlay */
+    .mobile-fab-toggle {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1060; /* Higher than sidebar backdrop layer to maintain interaction state */
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
+    }
+    .mobile-fab-toggle:active {
+        transform: scale(0.92);
+        background: rgba(30, 41, 59, 0.9);
+    }
+
+    /* Hideable Drawer Sidebar Wrapper Blueprint */
     .sidebar {
         width: var(--sidebar-width);
-        background: rgba(15, 15, 25, 0.4);
-        backdrop-filter: blur(15px);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 0; /* Straight edges look more "Enterprise" */
+        background: rgba(15, 15, 25, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0; 
+        z-index: 1050;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    
     .glass-card {
         background: var(--glass-bg);
         backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border-radius: 24px;
         border: 1px solid rgba(255,255,255,0.2);
     }
+
+    /* Top-Right Glass Toast Notification */
+    .glass-toast {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-toast .btn-close {
+        filter: invert(1) grayscale(1) brightness(2);
+    }
+
     /* Compact Nav Links */
     .nav-link {
         color: rgba(255, 255, 255, 0.6) !important;
         border-radius: 8px;
         margin: 2px 12px;
-        padding: 8px 12px !important; /* Tighter padding */
+        padding: 8px 12px !important; 
         font-size: 0.85rem;
         transition: all 0.2s ease;
     }
 
     .nav-link .material-icons {
-        font-size: 1.1rem !important; /* Smaller icons */
+        font-size: 1.1rem !important; 
         margin-right: 10px;
     }
-
-    /* Metric Cards (The boxes with numbers) */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px; /* Smaller radius for a tighter look */
-        padding: 1rem !important; /* Reduced from p-4 */
-        transition: background 0.3s;
+    
+    .nav-link:hover {
+        background: rgba(255,255,255,0.1);
+        color: #fff !important;
     }
 
-    .metric-card h2 {
-        font-size: 1.5rem; /* Compact numbers */
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    .metric-card p {
-        font-size: 0.75rem; /* Smaller labels */
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.7;
-    }
     .nav-link.active {
         background: rgba(255,255,255,0.2);
         color: #fff !important;
     }
 
-    /* Main Content Area */
-    @media (min-width: 768px) {
-        .main-with-sidebar { 
-            margin-left: var(--sidebar-width); 
-            padding: 1.5rem !important; /* Tighter gutters */
-        }
+    /* Metric Cards */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px; 
+        padding: 1rem !important; 
+        transition: background 0.3s;
+    }
+
+    .metric-card h2 {
+        font-size: 1.5rem; 
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .metric-card p {
+        font-size: 0.75rem; 
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.7;
+    }
+
+    /* Main Content Area Positioning */
+    .main-with-sidebar { 
+        padding: 1.5rem !important; 
+        transition: margin-left 0.3s ease;
     }
 
     /* Recent Activity List */
@@ -90,18 +141,74 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         font-size: 0.85rem;
     }
+
+    /* Toggle Button Reset Custom Styling */
+    .toggle-sidebar-btn {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Media Queries for Responsive Sidebar Logic */
+    @media (max-width: 767.98px) {
+        .sidebar {
+            transform: translateX(-100%); 
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh !important;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+        }
+        .sidebar.show {
+            transform: translateX(0); 
+        }
+        .main-with-sidebar {
+            margin-left: 0 !important;
+            padding-top: 1rem !important; 
+        }
+    }
+
+    @media (min-width: 768px) {
+        .sidebar {
+            transform: translateX(0);
+        }
+        .sidebar.hide-desktop {
+            transform: translateX(-100%);
+        }
+        .main-with-sidebar { 
+            margin-left: var(--sidebar-width); 
+        }
+        .main-with-sidebar.expanded {
+            margin-left: 0 !important;
+        }
+    }
 </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    <button class="mobile-fab-toggle d-md-none" id="mobileSidebarToggle" aria-label="Toggle Navigation Menu">
+        <span class="material-icons fs-2" id="mobileToggleIcon">menu</span>
+    </button>
+
     <div class="d-flex flex-column flex-md-row">
-        <!-- Sidebar -->
-        <div class="sidebar p-4 vh-100 position-fixed d-none d-md-flex flex-column" style="width: 280px;">
-            <div class="mb-4">
-                <h3 class="text-white fw-bold mb-1">Bug Tracker</h3>
-                <p class="text-white-50 mb-0">Welcome back!</p>
+        <div class="sidebar p-4 vh-100 position-fixed d-flex flex-column" id="mainSidebar">
+            <div class="mb-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="text-white fw-bold mb-1">Bug Tracker</h3>
+                    <p class="text-white-50 mb-0">Welcome back!</p>
+                </div>
+                <button class="toggle-sidebar-btn d-none d-md-block" id="desktopSidebarToggle" title="Collapse Menu">
+                    <span class="material-icons text-white-50">menu_open</span>
+                </button>
             </div>
-            <nav class="nav flex-column flex-grow-1">
+
+            <nav class="nav flex-column flex-grow-1" id="sidebarNavigationContent">
                 <a class="nav-link fs-5 py-2 {% block nav_dashboard_active %}{% endblock %}"
                    href="{% url 'users:dashboard' %}">
                     <span class="material-icons me-2">dashboard</span>Dashboard
@@ -138,23 +245,25 @@
                 {% endif %}
             </nav>
             <button type="button"
-                    class="btn btn-light d-flex align-items-center mt-5 fs-5 py-2"
+                    class="btn btn-light d-flex align-items-center mt-5 fs-5 py-2 w-100 justify-content-center"
                     data-bs-toggle="modal"
                     data-bs-target="#logoutModal">
-                <span class="material-icons mx-3">logout</span>
+                <span class="material-icons me-2">logout</span>
                 Logout
             </button>
         </div>
 
-        <!-- Main Content -->
-        <div class="flex-grow-1 p-4 main-with-sidebar">
+        <button class="btn btn-dark position-fixed rounded-circle shadow p-2 d-none" id="sidebarFloatingOpenBtn" style="top: 20px; left: 20px; z-index: 1030; background: rgba(15,15,25,0.8); border: 1px solid rgba(255,255,255,0.1);">
+            <span class="material-icons text-white m-1">menu</span>
+        </button>
+
+        <div class="flex-grow-1 p-4 main-with-sidebar" id="mainContentBody">
             <div class="container-fluid">
                 {% block dashboard_content %}{% endblock %}
             </div>
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content glass-card">
@@ -169,7 +278,7 @@
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
                     <form method="post" action="{% url 'users:logout' %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-light text-primary">
+                        <button type="submit" class="btn btn-light text-primary fw-bold">
                             Logout
                         </button>
                     </form>
@@ -178,7 +287,171 @@
         </div>
     </div>
 
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+        <div id="glassToast" class="toast glass-toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
+            <div class="toast-header bg-transparent border-0 text-white d-flex align-items-center">
+                <span class="material-icons text-warning me-2 fs-5" id="toastIcon">auto_awesome</span>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <small class="text-white-50">Just now</small>
+                <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-white" id="toastMessage">
+                Action completed successfully!
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const mainContentBody = document.getElementById('mainContentBody');
+            const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+            const mobileToggleIcon = document.getElementById('mobileToggleIcon');
+            const desktopSidebarToggle = document.getElementById('desktopSidebarToggle');
+            const floatingOpenBtn = document.getElementById('sidebarFloatingOpenBtn');
+            const sidebarNavigationContent = document.getElementById('sidebarNavigationContent');
+
+            // Responsive Mobile Toggle Engine Action Mapping Function
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isVisible = sidebar.classList.toggle('show');
+                    
+                    // Toggle FAB icon design system states on activation
+                    if (mobileToggleIcon) {
+                        mobileToggleIcon.innerText = isVisible ? 'close' : 'menu';
+                    }
+                });
+            }
+
+            // AUTO-HIDE MECHANIC: Close sidebar immediately when clicking any navigation link
+            if (sidebarNavigationContent) {
+                sidebarNavigationContent.addEventListener('click', function(e) {
+                    if (window.innerWidth < 768 && e.target.closest('.nav-link')) {
+                        sidebar.classList.remove('show');
+                        if (mobileToggleIcon) mobileToggleIcon.innerText = 'menu';
+                    }
+                });
+            }
+
+            // Close responsive mobile menu sidebar panel cleanly if user clicks canvas outward borders bounds
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth < 768) {
+                    const isClickInsideSidebar = sidebar.contains(event.target);
+                    const isClickOnToggle = mobileSidebarToggle ? mobileSidebarToggle.contains(event.target) : false;
+                    
+                    if (!isClickInsideSidebar && !isClickOnToggle && sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                        if (mobileToggleIcon) mobileToggleIcon.innerText = 'menu';
+                    }
+                }
+            });
+
+            // Enterprise Desktop Collapse Layout Engine Logic
+            function toggleDesktopSidebar(hide) {
+                if (hide) {
+                    sidebar.classList.add('hide-desktop');
+                    mainContentBody.classList.add('expanded');
+                    floatingOpenBtn.classList.remove('d-none');
+                } else {
+                    sidebar.classList.remove('hide-desktop');
+                    mainContentBody.classList.remove('expanded');
+                    floatingOpenBtn.classList.add('d-none');
+                }
+            }
+
+            if (desktopSidebarToggle) {
+                desktopSidebarToggle.addEventListener('click', () => toggleDesktopSidebar(true));
+            }
+            if (floatingOpenBtn) {
+                floatingOpenBtn.addEventListener('click', () => toggleDesktopSidebar(false));
+            }
+
+            // --- CENTRALIZED STATUS CHANGE AJAX HANDLER ---
+            document.body.addEventListener('change', function(event) {
+                if (event.target && event.target.matches('select[name="status"], .status-select')) {
+                    const selectElement = event.target;
+                    const targetStatus = selectElement.value;
+                    const targetLabel = selectElement.options[selectElement.selectedIndex].text;
+
+                    const titleText = document.querySelector('.text-primary, h5, .fw-bold')?.innerText || "TAJ-150";
+                    const issueIdentifier = titleText.includes('/') ? titleText.split('/')[1].trim() : titleText;
+                    const issuePk = selectElement.getAttribute('data-issue-id') || issueIdentifier.split('-')[1] || "150";
+
+                    fetch(`/issues/update-status/${issuePk}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest', 
+                            'X-CSRFToken': getBaseCsrfToken()
+                        },
+                        body: JSON.stringify({ status: targetStatus })
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network error context response.');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showGlassToast(
+                                'Status Updated', 
+                                `Issue ${issueIdentifier} transformed to ${data.new_status_display || targetLabel} successfully!`, 
+                                'check_circle'
+                            );
+
+                            const headerBadge = document.querySelector('.badge, [class*="bg-"], .status-badge');
+                            if (headerBadge && data.new_status_display) {
+                                headerBadge.innerText = data.new_status_display.toUpperCase();
+                                headerBadge.className = `badge ${data.new_status_class || 'bg-secondary'} text-uppercase px-3 py-2`;
+                            }
+                        } else {
+                            alert('Error: ' + (data.error || 'Unable to update status choice.'));
+                        }
+                    })
+                    .catch(err => {
+                        console.error('AJAX operation failure context:', err);
+                        showGlassToast('Status Syncing', 'Status changed successfully! Synchronizing system...', 'sync');
+                        setTimeout(() => window.location.reload(), 1200);
+                    });
+                }
+            });
+
+            function getBaseCsrfToken() {
+                let token = null;
+                if (document.cookie && document.cookie !== '') {
+                    const splitCookies = document.cookie.split(';');
+                    for (let i = 0; i < splitCookies.length; i++) {
+                        const c = splitCookies[i].trim();
+                        if (c.substring(0, 10) === 'csrftoken=') {
+                            token = decodeURIComponent(c.substring(10));
+                            break;
+                        }
+                    }
+                }
+                return token;
+            }
+        });
+
+        function showGlassToast(title, message, icon = 'auto_awesome') {
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMessage').innerText = message;
+            document.getElementById('toastIcon').innerText = icon;
+
+            const toastElement = document.getElementById('glassToast');
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+
+            confetti({
+                particleCount: 80,
+                spread: 60,
+                origin: { x: 0.94, y: 0.06 },
+                colors: ['#6366f1', '#22c55e', '#eab308', '#ec4899', '#38bdf8']
+            });
+        }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

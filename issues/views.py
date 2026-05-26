@@ -336,11 +336,13 @@ class IssueDetailView(LoginRequiredMixin, DetailView):
         context['remark_logs'] = issue.remark_logs.select_related('author').all()
         return context
 
+from django.contrib import messages  # Added for flash messages context notifications
 
 class IssueCreateView(LoginRequiredMixin, View):
     def get(self, request, project_pk):
         project = get_object_or_404(Project, pk=project_pk)
-        form = IssueForm(initial={'project': project, 'reporter': request.user})
+        # Added user context parameter initialization tracking configuration
+        form = IssueForm(initial={'project': project, 'reporter': request.user}, user=request.user)
         return render(
             request,
             'issues/issue_form.html',
@@ -352,14 +354,27 @@ class IssueCreateView(LoginRequiredMixin, View):
 
     def post(self, request, project_pk):
         project = get_object_or_404(Project, pk=project_pk)
-        form = IssueForm(request.POST, request.FILES)
+        # Added user context parameter verification handling here too
+        form = IssueForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             issue = form.save(commit=False)
             issue.project = project
             issue.created_by = request.user
             issue.reporter = request.user 
             issue.save()
+
+            IssueRemarkLog.objects.create(
+                issue=issue,
+                author=request.user,
+                from_status=issue.status,
+                to_status=issue.status,
+                remark=f"Issue initially logged with Status: '{issue.get_status_display()}' and Priority: '{issue.get_priority_display()}'.",
+            )
+
+            # Added standard creation success context notification message
+            messages.success(request, f"Issue '{issue.title}' logged successfully.")
             return redirect('issues:issue_detail', pk=issue.pk)
+            
         return render(
             request,
             'issues/issue_form.html',
@@ -372,8 +387,11 @@ class IssueCreateView(LoginRequiredMixin, View):
 class IssueUpdateView(LoginRequiredMixin, View):
     def get(self, request, pk):
         issue = get_object_or_404(Issue, pk=pk)
-        form = IssueForm(instance=issue)
-        form.fields['reporter'].widget.attrs['readonly'] = True
+        form = IssueForm(instance=issue, user=request.user)
+        
+        if 'reporter' in form.fields:
+            form.fields['reporter'].widget.attrs['readonly'] = True
+            
         return render(
             request,
             'issues/issue_form.html',
@@ -391,7 +409,8 @@ class IssueUpdateView(LoginRequiredMixin, View):
         old_status_label = issue.get_status_display()
         old_priority_label = issue.get_priority_display()
 
-        form = IssueForm(request.POST, request.FILES, instance=issue)
+        form = IssueForm(request.POST, request.FILES, instance=issue, user=request.user)
+        
         if form.is_valid():
             issue = form.save()
 
@@ -413,6 +432,8 @@ class IssueUpdateView(LoginRequiredMixin, View):
                     remark=f"Priority changed from {old_priority_label} to {issue.get_priority_display()}.",
                 )
 
+            # Added standard modifications update save success context banner message
+            messages.success(request, f"Changes to tracking item '{issue.title}' saved successfully.")
             return redirect('issues:issue_detail', pk=issue.pk)
 
         return render(
@@ -424,7 +445,6 @@ class IssueUpdateView(LoginRequiredMixin, View):
                 'issue': issue,
             },
         )
-
 
 class IssueAddRemarkView(LoginRequiredMixin, View):
     def post(self, request, pk):
@@ -454,29 +474,25 @@ from django.utils import timezone
 from datetime import timedelta
 # Assuming these imports exist in your project structure:
 # from .models import Issue, TeamMemberRoleChoices
-
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
     context_object_name = 'issues'
-    paginate_by = 50  # <-- Set pagination limit to 50 items per page
+    paginate_by = 50
 
     def get_queryset(self):
         user = self.request.user
         
-        # Safe Check: Prevent RelatedObjectDoesNotExist if user has no profile
         if hasattr(user, 'team_member'):
             role = user.team_member.role
         else:
             role = None
         
-        # Filter logic based on team assignment profile (Including co_assignees where applicable)
         if role == TeamMemberRoleChoices.QA:
             qs = Issue.objects.filter(reporter=user)
         elif role == TeamMemberRoleChoices.DEVELOPER:
             qs = Issue.objects.filter(Q(assignee=user) | Q(co_assignees=user))
         else:
-            # Fallback for Admins / Staff without an explicit profile: See all connections
             qs = Issue.objects.filter(Q(assignee=user) | Q(reporter=user) | Q(co_assignees=user))
 
         # Apply Time Filter
@@ -495,7 +511,6 @@ class MyIssueListView(LoginRequiredMixin, ListView):
             if status == 'pending_qa':
                 qs = qs.filter(status='ready_for_qa')
             elif status == 'co_assigned':
-                # Explicitly filter where user is a co-assignee
                 qs = qs.filter(co_assignees=user)
             else:
                 qs = qs.filter(status=status)
@@ -506,7 +521,6 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Safe check inside context data configuration
         if hasattr(user, 'team_member'):
             role = user.team_member.role
             context['view_perspective'] = user.team_member.get_role_display()
@@ -550,6 +564,24 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         
         context['current_status'] = self.request.GET.get('status', '')
         context['current_date_filter'] = self.request.GET.get('date_filter', 'all')
+
+        # --- Dynamic UI Dropdown Permission Engine ---
+        # Fetch human-readable choices dictionary from your model layer choices
+        all_choices = dict(Issue.StatusChoices.choices if hasattr(Issue, 'StatusChoices') else IssueStatusChoices.choices)
+        
+        if role == TeamMemberRoleChoices.DEVELOPER:
+            # Developers can transition items to active work or hand off to QA
+            allowed_keys = ['open' ,'dev_in_progress', 'in_review', 'hold', 'ready_for_qa', ]
+        elif role == TeamMemberRoleChoices.QA:
+            # QA can manage verification stages, reject issues, or close/complete tasks
+            allowed_keys = ['open' ,'qa_in_progress', 'hold', 'scope_review', 'rejected', 'done', 'closed', 'reopen']
+        else:
+            # Staff or Admin fallbacks have access to the full pipeline status set
+            allowed_keys = list(all_choices.keys())
+
+        # Construct filtered tuple-list structure passed down directly to dropdown renderer
+        context['status_choices'] = [(key, all_choices[key]) for key in allowed_keys if key in all_choices]
+        
         return context
     
 class TagListView(LoginRequiredMixin, View):
@@ -595,3 +627,70 @@ class TagDeleteView(LoginRequiredMixin, View):
         tag = get_object_or_404(Tag, pk=pk)
         tag.delete()
         return redirect("issues:tag_list")
+    
+
+
+import json
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.generic import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
+from .models import Issue, IssueRemarkLog  # Adjust application import paths as necessary
+
+class IssueStatusUpdateAjaxView(LoginRequiredMixin, View):
+    """
+    Handles inline status updates for an Issue over AJAX/Fetch API.
+    Returns JSON responses and records history logs on change.
+    """
+    def post(self, request, pk):
+        if request.headers.get('x-requested-with') != 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=400)
+            
+        issue = get_object_or_404(Issue, pk=pk)
+        
+        try:
+            data = json.loads(request.body)
+            new_status = data.get('status')
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Malformed JSON payload.'}, status=400)
+
+        # Validate that the requested status is defined within model choices
+        valid_statuses = [choice[0] for choice in Issue._meta.get_field('status').choices]
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': 'Invalid status choice.'}, status=400)
+
+        old_status = issue.status
+        old_status_label = issue.get_status_display()
+
+        if old_status != new_status:
+            issue.status = new_status
+            issue.save()
+
+            # Generate modern logging details tracking changes
+            IssueRemarkLog.objects.create(
+                issue=issue,
+                author=request.user,
+                from_status=old_status,
+                to_status=issue.status,
+                remark=f"Status changed from {old_status_label} to {issue.get_status_display()} via quick update dashboard.",
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'new_status_display': issue.get_status_display(),
+                'new_status_class': self._get_status_badge_class(new_status)
+            })
+
+        return JsonResponse({'success': True, 'info': 'No status changes detected.'})
+
+    def _get_status_badge_class(self, status):
+        """Helper to return CSS classes synchronized with your templates layout."""
+        if status == 'open':
+            return 'bg-info'
+        elif status in ['ready_for_qa', 'pending_qa']:
+            return 'bg-success'
+        elif status == 'dev_in_progress':
+            return 'bg-warning'
+        return 'bg-secondary text-white'

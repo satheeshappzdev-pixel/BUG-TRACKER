@@ -2,6 +2,8 @@
 
 {% block title %}Dashboard - {{ view_perspective }}{% endblock %}
 
+{% block nav_my_issues_active %}active{% endblock %}
+
 {% block extra_head %}
 <style>
     /* Compact Typography & Design System */
@@ -174,15 +176,81 @@
         background: rgba(255, 255, 255, 0.12);
         border-color: rgba(255, 255, 255, 0.2);
     }
+
+    /* Dark Themed Custom Modals matching Dashboard System */
+    .modal-dark-theme .modal-content {
+        background-color: #121824;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        color: #ffffff;
+    }
+    .modal-dark-theme .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .modal-dark-theme .modal-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Integrated Primary Theme Action CTA Controls */
+    .btn-theme-primary {
+        background-color: #4e73df !important;
+        border-color: #4e73df !important;
+        color: #ffffff !important;
+    }
+    .btn-theme-primary:hover {
+        background-color: #375ac2 !important;
+        border-color: #375ac2 !important;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05) !important; 
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
 </style>
 {% endblock %}
 
 {% block dashboard_content %}
+
+<div class="modal fade" id="statusConfirmModal" {{ 'tabindex="-1"'|safe }} aria-labelledby="statusConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="statusConfirmModalLabel">
+                    <i class="material-icons text-warning align-middle me-2">auto_awesome</i>Confirm Status Transformation
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-white">
+                <p class="text-white-50 small mb-3">Are you sure you want to perform this system state transformation rule change?</p>
+                
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-10 small">
+                    <div class="mb-1">
+                        <span class="text-white-50">Target Task:</span> 
+                        <span id="modalIssueIdentifier" class="fw-bold text-info ms-1">TAJ-150 - Server side log issue</span>
+                    </div>
+                    <div>
+                        <span class="text-white-50">Target Update:</span> 
+                        <span class="badge bg-primary ms-1 text-uppercase" id="modalTargetLabel">In Review</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-sm text-white-50 text-hover-white" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary px-3 fw-bold" id="executeStatusUpdateBtn">
+                    Confirm & Apply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="dashboard-viewport-flex">
 
-    {# --- FIXED PINNED SECTION (HEADER + METRIC ROWS + FILTERS) --- #}
+    {# --- FIXED PINNED SECTION --- #}
     <div class="sticky-top-section">
-        {# Header & Time Filters #}
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2 class="text-white fw-bold mb-0">{{ view_perspective }} Dashboard</h2>
@@ -196,7 +264,6 @@
             </div>
         </div>
 
-        {# Top Metric Row (All Statuses + Co-Assigned) #}
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 mb-3">
             <div class="col">
                 <div class="metric-box">
@@ -242,7 +309,6 @@
             </div>
         </div>
 
-        {# Filter Buttons #}
         <div class="d-flex gap-2 mb-2 overflow-auto pb-1">
             <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
             <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
@@ -253,29 +319,29 @@
         </div>
     </div>
 
-    {# --- SCROLLABLE DATA REGION FOR SYSTEM ENTRIES --- #}
+    {# --- SCROLLABLE DATA REGION --- #}
     <div class="scrollable-issues-region mt-1">
         {% if issues %}
         <div class="row g-3">
             {% for issue in issues %}
-            <div class="col-12">
+            <div class="col-12" id="issue-card-container-{{ issue.pk }}">
                 <div class="issue-card p-3 text-white position-relative">
                     <div class="position-absolute start-0 top-0 bottom-0 bg-{% if issue.status == 'done' %}success{% elif issue.priority == 'critical' %}danger{% else %}primary{% endif %}" style="width: 4px; opacity: 0.7;"></div>
                     
                     <div class="ms-2">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2" 
-                             data-bs-toggle="collapse" 
-                             data-bs-target="#collapseIssue{{ issue.pk }}" 
-                             style="cursor: pointer;"
-                             role="button"
-                             aria-expanded="false" 
-                             aria-controls="collapseIssue{{ issue.pk }}">
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#collapseIssue{{ issue.pk }}" 
+                            style="cursor: pointer;"
+                            role="button"
+                            aria-expanded="false" 
+                            aria-controls="collapseIssue{{ issue.pk }}">
                             
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                                     <span class="text-primary smaller fw-bold uppercase tracking-wider">{{ issue.project.name }}</span>
                                     <span class="text-white-50 small">/</span>
-                                    <span class="text-white-50 smaller">
+                                    <span class="text-white-50 smaller" id="issue-tracking-tag-{{ issue.pk }}">
                                         {% if issue.project.code %}{{ issue.project.code }}-{{ issue.pk }}{% else %}#{{ issue.pk }}{% endif %}
                                     </span>
                                     <span class="badge bg-primary-subtle text-primary smaller px-2 py-0 border border-primary border-opacity-25" style="font-size: 0.65rem;">
@@ -283,13 +349,13 @@
                                     </span>
                                     <span class="badge bg-secondary smaller opacity-75 ms-1">{{ issue.get_priority_display }} Priority</span>
                                 </div>
-                                <h6 class="fw-bold mb-0 text-white">
+                                <h6 class="fw-bold mb-0 text-white" id="issue-title-heading-{{ issue.pk }}">
                                     {{ issue.title }}
                                 </h6>
                             </div>
 
                             <div class="d-flex align-items-center gap-3 align-self-stretch align-self-md-center justify-content-between justify-content-md-end">
-                                <span class="status-badge-fixed text-dark text-center {% if issue.status == 'open' %}bg-info{% elif issue.status == 'ready_for_qa' or issue.status == 'pending_qa' %}bg-success{% elif issue.status == 'dev_in_progress' %}bg-warning{% else %}bg-secondary text-white{% endif %}">
+                                <span id="status-badge-{{ issue.pk }}" class="status-badge-fixed text-dark text-center {% if issue.status == 'open' %}bg-info{% elif issue.status == 'ready_for_qa' or issue.status == 'pending_qa' or issue.status == 'done' %}bg-success{% elif issue.status == 'dev_in_progress' or issue.status == 'qa_in_progress' %}bg-warning{% else %}bg-secondary text-white{% endif %}">
                                     {{ issue.get_status_display }}
                                 </span>
                                 <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
@@ -310,7 +376,6 @@
                                 <span>Assignee: <strong class="text-white">{{ issue.assignee.get_short_name|default:issue.assignee.username|default:"Unassigned" }}</strong></span>
                             </div>
                             
-                            {# Co-Assignees Rounded Pill Tag Component Placement #}
                             {% if issue.co_assignees.all %}
                             <div class="d-flex align-items-center gap-1">
                                 <span class="material-icons text-purple align-middle" style="font-size: 0.95rem; color: #a370f7;">group</span>
@@ -350,8 +415,42 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-end align-items-center border-top border-secondary border-opacity-10 pt-3">
-                                <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-1 px-3 smaller fw-bold tracking-tighter">VIEW DETAILS</a>
+                            
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 border-top border-secondary border-opacity-10 pt-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="smaller text-white-50 fw-bold uppercase tracking-wider nonce-label">Status:</span>
+                                    
+                                    <select class="form-select form-select-sm inline-status-selector bg-black text-white border-secondary border-opacity-50 smaller" 
+                                            style="width: 175px; border-radius: 6px;"
+                                            data-issue-id="{{ issue.pk }}"
+                                            data-update-url="{% url 'issues:issue_update_status_ajax' issue.pk %}"
+                                            data-initial-val="{{ issue.status }}">
+                                        
+                                        {% if status_choices %}
+                                            {# Dynamically fetch choices context direct from the views layer if passed #}
+                                            {% for value, label in status_choices %}
+                                                <option value="{{ value }}" {% if issue.status == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        {% else %}
+                                            {# Reliable hardcoded mirror mapping of IssueStatusChoices #}
+                                            <option value="open" {% if issue.status == 'open' %}selected{% endif %}>Open</option>
+                                            <option value="dev_in_progress" {% if issue.status == 'dev_in_progress' %}selected{% endif %}>Dev In Progress</option>
+                                            <option value="ready_for_qa" {% if issue.status == 'ready_for_qa' %}selected{% endif %}>Ready for QA</option>
+                                            <option value="qa_in_progress" {% if issue.status == 'qa_in_progress' %}selected{% endif %}>QA In Progress</option>
+                                            <option value="in_review" {% if issue.status == 'in_review' %}selected{% endif %}>In Review</option>
+                                            <option value="hold" {% if issue.status == 'hold' %}selected{% endif %}>Hold</option>
+                                            <option value="scope_review" {% if issue.status == 'scope_review' %}selected{% endif %}>Scope Review</option>
+                                            <option value="rejected" {% if issue.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                            <option value="done" {% if issue.status == 'done' %}selected{% endif %}>Done</option>
+                                            <option value="closed" {% if issue.status == 'closed' %}selected{% endif %}>Closed</option>
+                                            <option value="reopen" {% if issue.status == 'reopen' %}selected{% endif %}>Reopen</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+
+                                <div class="d-flex align-items-center">
+                                    <a href="{% url 'issues:issue_detail' issue.pk %}" class="btn btn-sm btn-primary py-1 px-3 smaller fw-bold tracking-tighter">VIEW DETAILS</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -361,7 +460,151 @@
             {% endfor %}
         </div>
 
-        {# Modernized Right-Aligned Pagination System Controls Component #}
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // Shared State Context Tracking Objects
+            let activeTransferContext = null;
+            const statusModalElement = document.getElementById('statusConfirmModal');
+            const nativeModalInstance = new bootstrap.Modal(statusModalElement);
+            const confirmationSubmitTrigger = document.getElementById('executeStatusUpdateBtn');
+
+            // Listen for selection modifications on task choice elements
+            document.body.addEventListener('change', function(event) {
+                if (event.target.classList.contains('inline-status-selector')) {
+                    const selector = event.target;
+                    const initialVal = selector.getAttribute('data-initial-val');
+                    const tentativeVal = selector.value;
+
+                    if (tentativeVal === initialVal) return;
+
+                    const issueId = selector.getAttribute('data-issue-id');
+                    const actionUrl = selector.getAttribute('data-update-url');
+                    const selectedLabel = selector.options[selector.selectedIndex].text;
+                    
+                    const codeLabelText = document.getElementById(`issue-tracking-tag-${issueId}`).textContent.trim();
+                    const titleText = document.getElementById(`issue-title-heading-${issueId}`).textContent.trim();
+
+                    // Map current payload properties directly to staging transactional context
+                    activeTransferContext = {
+                        issueId: issueId,
+                        targetUrl: actionUrl,
+                        statusValue: tentativeVal,
+                        statusLabel: selectedLabel,
+                        selectorElement: selector
+                    };
+
+                    // Populate operational metadata tags inside modal body
+                    document.getElementById('modalIssueIdentifier').textContent = `${codeLabelText} - ${titleText}`;
+                    document.getElementById('modalTargetLabel').textContent = selectedLabel;
+
+                    // Expose confirmation UI layer
+                    nativeModalInstance.show();
+                }
+            });
+
+            // Revert state track pointers if modal is exited manually without acceptance
+            statusModalElement.addEventListener('hidden.bs.modal', function () {
+                if (activeTransferContext) {
+                    const previousBaseVal = activeTransferContext.selectorElement.getAttribute('data-initial-val');
+                    activeTransferContext.selectorElement.value = previousBaseVal;
+                    activeTransferContext = null;
+                }
+            });
+
+            // Send payload via Fetch API once confirm button inside modal is clicked
+            confirmationSubmitTrigger.addEventListener('click', function() {
+                if (!activeTransferContext) return;
+
+                const ctx = activeTransferContext;
+                const csrftoken = getCookie('csrftoken');
+
+                // Enforce loading locks inside confirmation button interface
+                confirmationSubmitTrigger.disabled = true;
+                confirmationSubmitTrigger.textContent = "Processing...";
+
+                fetch(ctx.targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest', // MAKES THE DJANGO VIEW RESPOND
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ 'status': ctx.statusValue })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Bad network transaction processing operation.');
+                    return response.json();
+                })
+                .then(data => {
+                    const trackingSelector = ctx.selectorElement;
+                    const trackingCodeLabel = document.getElementById(`issue-tracking-tag-${ctx.issueId}`)?.textContent.trim() || `#${ctx.issueId}`;
+                    activeTransferContext = null; 
+                    nativeModalInstance.hide();
+
+                    if (data.success) {
+                        // Update visual status header pill values inside UI
+                        const localizedBadge = document.getElementById(`status-badge-${ctx.issueId}`);
+                        if (localizedBadge) {
+                            localizedBadge.textContent = data.new_status_display || ctx.statusLabel;
+                            if (data.new_status_class) {
+                                localizedBadge.className = "status-badge-fixed text-dark text-center " + data.new_status_class;
+                            }
+                        }
+                        
+                        // Commit permanent data updates to context values
+                        trackingSelector.setAttribute('data-initial-val', ctx.statusValue);
+                        
+                        // TRIGGER GLOBAL GLASS TOAST & CELEBRATION CONFETTI
+                        if (typeof showGlassToast === 'function') {
+                            showGlassToast(
+                                'Status Transformed', 
+                                `Issue ${trackingCodeLabel} successfully updated to "${data.new_status_display || ctx.statusLabel}"!`, 
+                                'check_circle'
+                            );
+                        }
+                    } else {
+                        trackingSelector.value = trackingSelector.getAttribute('data-initial-val');
+                        if (typeof showGlassToast === 'function') {
+                            showGlassToast('Update Rejected', data.error || 'Server rejected changes.', 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('AJAX Layer Context Fault Tracking Logs:', error);
+                    if (activeTransferContext) {
+                        activeTransferContext.selectorElement.value = activeTransferContext.selectorElement.getAttribute('data-initial-val');
+                        activeTransferContext = null;
+                    }
+                    nativeModalInstance.hide();
+                    if (typeof showGlassToast === 'function') {
+                        showGlassToast('Connection Error', 'Network failure or lifecycle expiration error.', 'sync_problem');
+                    }
+                })
+                .finally(() => {
+                    confirmationSubmitTrigger.disabled = false;
+                    confirmationSubmitTrigger.textContent = "Confirm & Apply";
+                });
+            });
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+        </script>
+
+        {# Pagination system controls block #}
         {% if is_paginated %}
         <div class="custom-pagination-container">
             <div class="text-white-50 small">

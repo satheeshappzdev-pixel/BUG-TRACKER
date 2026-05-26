@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    MyIssueListView, ProjectListView, ProjectDetailView, ProjectCreateView, ProjectUpdateView,
+    IssueStatusUpdateAjaxView, MyIssueListView, ProjectListView, ProjectDetailView, ProjectCreateView, ProjectUpdateView,
     IssueListView, IssueDetailView, IssueCreateView, IssueUpdateView, IssueAddRemarkView, TagCreateView, TagDeleteView, TagListView, TagUpdateView,
 )
 
@@ -22,4 +22,6 @@ urlpatterns = [
     path('tags/create/', TagCreateView.as_view(), name='tag_create'),
     path('tags/<int:pk>/edit/', TagUpdateView.as_view(), name='tag_edit'),
     path('tags/<int:pk>/delete/', TagDeleteView.as_view(), name='tag_delete'),
+    path('issues/<int:pk>/update-status-ajax/', IssueStatusUpdateAjaxView.as_view(), name='issue_update_status_ajax'),
+
 ]
