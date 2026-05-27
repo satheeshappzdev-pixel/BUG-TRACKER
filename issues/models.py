@@ -42,6 +42,8 @@ class Project(models.Model):
         if self.code:
             return f'{self.code} - {self.name}'
         return self.name
+    
+
 class Issue(models.Model):
     project = models.ForeignKey(
         Project,
@@ -146,7 +148,12 @@ class Issue(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+            ordering = ['-created_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Track initial state to detect field updates during save execution
+        self._current_status = self.status
 
     def __str__(self):
         return self.title
@@ -159,12 +166,12 @@ class Issue(models.Model):
         if user == self.assignee:
             return True
             
-        # 2. Check new co-assignees list
-        if self.co_assignees.filter(id=user.id).exists():
-            return True
-            
         # 3. Check reporter
         if user == self.reporter:
+            return True
+            
+        # 2. Check co-assignees list (Optimized check)
+        if self.co_assignees.contains(user):
             return True
             
         # 4. Check management roles
@@ -173,6 +180,7 @@ class Issue(models.Model):
             return True
             
         return False
+
 
 class IssueRemarkLog(models.Model):
     issue = models.ForeignKey(

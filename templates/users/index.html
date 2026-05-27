@@ -1,12 +1,16 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{% block title %}Dashboard - Bug Tracker{% endblock %}</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Dashboard - Bug Tracker{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 <style>
     :root { 
         --glass-bg: rgba(255, 255, 255, 0.06); 
@@ -39,7 +43,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 1060; /* Higher than sidebar backdrop layer to maintain interaction state */
+        z-index: 1060; 
         cursor: pointer;
         transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
     }
@@ -66,20 +70,6 @@
         -webkit-backdrop-filter: blur(20px);
         border-radius: 24px;
         border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    /* Top-Right Glass Toast Notification */
-    .glass-toast {
-        background: rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(20px) saturate(160%);
-        -webkit-backdrop-filter: blur(20px) saturate(160%);
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.4);
-    }
-
-    .glass-toast .btn-close {
-        filter: invert(1) grayscale(1) brightness(2);
     }
 
     /* Compact Nav Links */
@@ -154,6 +144,171 @@
         justify-content: center;
     }
 
+    /* --- Floating Top-Right Glass Notification Bell & Floating Button --- */
+    .floating-notif-center-wrapper {
+        position: fixed;
+        top: 20px;
+        right: 24px;
+        z-index: 1040;
+        display: flex;
+        align-items: center;
+    }
+    .floating-bell-pill-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(18, 24, 36, 0.7);
+        backdrop-filter: blur(14px) saturate(180%);
+        -webkit-backdrop-filter: blur(14px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        position: relative;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    .floating-bell-pill-btn:hover {
+        background: rgba(18, 24, 36, 0.9);
+        transform: translateY(-1px);
+    }
+    .floating-bell-badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background-color: #e74a3b; /* Pure red dashboard indicator color */
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 10px;
+        display: none; /* Controlled dynamically via JS */
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        box-shadow: 0 0 0 2px #0a102e;
+    }
+
+    /* --- Floating Dropdown Menu System Layout --- */
+    .glass-dropdown-panel {
+        position: absolute;
+        top: 54px;
+        right: 0;
+        width: 350px;
+        background: rgba(18, 24, 36, 0.93);
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.7);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .glass-dropdown-panel.show { display: flex; }
+    .glass-dropdown-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+    
+    /* Sleek Custom Scrollbar for Glass Menu Dropdown panel */
+    .glass-dropdown-scrollable {
+        max-height: 350px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+    .glass-dropdown-scrollable::-webkit-scrollbar {
+        width: 5px;
+    }
+    .glass-dropdown-scrollable::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .glass-dropdown-scrollable::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+    }
+    
+    .glass-dropdown-item {
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background 0.2s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .glass-dropdown-item:hover { background: rgba(255, 255, 255, 0.04); }
+    .glass-dropdown-item.unread { background: rgba(78, 115, 223, 0.06); }
+    .glass-dropdown-item.unread:hover { background: rgba(78, 115, 223, 0.1); }
+    
+    .glass-dropdown-footer {
+        padding: 14px;
+        text-align: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .glass-dropdown-footer a {
+        color: #4e73df;
+        text-decoration: none;
+        font-size: 0.825rem;
+        font-weight: 700;
+        display: inline-block;
+        padding-top: 2px; /* Extra top padding shift */
+    }
+    .glass-dropdown-footer a:hover { color: #60a5fa; }
+
+    /* --- Floating Glass Toast Engine CSS System --- */
+    #glass-toast-container {
+        position: fixed;
+        top: 24px;
+        right: 84px; /* Offset to clearly clear the new floating bell button */
+        z-index: 1099;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 360px;
+        pointer-events: none;
+    }
+    .glass-toast-card {
+        pointer-events: auto;
+        background: rgba(18, 24, 36, 0.85);
+        backdrop-filter: blur(14px) saturate(190%);
+        -webkit-backdrop-filter: blur(14px) saturate(190%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 4px solid #4e73df;
+        border-radius: 10px;
+        padding: 16px;
+        color: #ffffff;
+        box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transform: translateX(420px);
+        transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        opacity: 0;
+    }
+    .glass-toast-card.show { transform: translateX(0); opacity: 1; }
+    .glass-toast-card.status_changed { border-left-color: #f6c23e; }
+    .glass-toast-card.issue_assigned { border-left-color: #1cc88a; }
+    .glass-toast-card.management_announcement { border-left-color: #a370f7; }
+    .glass-toast-card.admin_announcement, .glass-toast-card.system_alert { border-left-color: #e74a3b; }
+
+    .glass-toast-icon { font-size: 20px; margin-top: 2px; }
+    .glass-toast-body { flex: 1; }
+    .glass-toast-title { font-weight: 700; font-size: 0.875rem; margin-bottom: 2px; }
+    .glass-toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.65); line-height: 1.4; }
+    .glass-toast-close { background: none; border: none; color: rgba(255, 255, 255, 0.4); cursor: pointer; padding: 0; font-size: 16px; }
+    .glass-toast-close:hover { color: #ffffff; }
+
     /* Media Queries for Responsive Sidebar Logic */
     @media (max-width: 767.98px) {
         .sidebar {
@@ -164,33 +319,46 @@
             height: 100vh !important;
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
         }
-        .sidebar.show {
-            transform: translateX(0); 
-        }
-        .main-with-sidebar {
-            margin-left: 0 !important;
-            padding-top: 1rem !important; 
-        }
+        .sidebar.show { transform: translateX(0); }
+        .main-with-sidebar { margin-left: 0 !important; padding-top: 5rem !important; }
+        .floating-notif-center-wrapper { top: 16px; right: 16px; }
+        #glass-toast-container { right: 16px; top: 80px; width: calc(100vw - 32px); }
     }
 
     @media (min-width: 768px) {
-        .sidebar {
-            transform: translateX(0);
-        }
-        .sidebar.hide-desktop {
-            transform: translateX(-100%);
-        }
-        .main-with-sidebar { 
-            margin-left: var(--sidebar-width); 
-        }
-        .main-with-sidebar.expanded {
-            margin-left: 0 !important;
-        }
+        .sidebar { transform: translateX(0); }
+        .sidebar.hide-desktop { transform: translateX(-100%); }
+        .main-with-sidebar { margin-left: var(--sidebar-width); }
+        .main-with-sidebar.expanded { margin-left: 0 !important; }
     }
 </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    <div id="glass-toast-container"></div>
+
+    <div class="floating-notif-center-wrapper">
+        <div class="floating-bell-pill-btn" id="centralNotifBellBtn" title="View Notifications Dashboard">
+            <span class="material-icons" style="font-size: 22px;">notifications</span>
+            <span class="floating-bell-badge" id="global-unread-badge">0</span>
+        </div>
+        
+        <div class="glass-dropdown-panel" id="centralNotifDropdown">
+            <div class="glass-dropdown-header text-white">
+                <span>Notifications Feed</span>
+                <span class="text-white-50 smaller fw-normal cursor-pointer" id="markAllReadNotifBtn" style="cursor: pointer; font-size: 0.75rem; color: #4e73df !important;">Mark all as read</span>
+            </div>
+            <div class="glass-dropdown-scrollable" id="dropdownItemsContainer">
+                <div class="text-center py-4 text-white-50 small" id="emptyNotifPlaceholder">
+                    <span class="material-icons d-block mb-1 opacity-50">notifications_off</span> No new alerts
+                </div>
+            </div>
+            <div class="glass-dropdown-footer">
+                <a href="{% url 'notifications:inbox_list' %}">Go to Notifications Inbox View →</a>
+            </div>
+        </div>
+    </div>
 
     <button class="mobile-fab-toggle d-md-none" id="mobileSidebarToggle" aria-label="Toggle Navigation Menu">
         <span class="material-icons fs-2" id="mobileToggleIcon">menu</span>
@@ -209,47 +377,35 @@
             </div>
 
             <nav class="nav flex-column flex-grow-1" id="sidebarNavigationContent">
-                <a class="nav-link fs-5 py-2 {% block nav_dashboard_active %}{% endblock %}"
-                   href="{% url 'users:dashboard' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_dashboard_active %}{% endblock %}" href="{% url 'users:dashboard' %}">
                     <span class="material-icons me-2">dashboard</span>Dashboard
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_teams_active %}{% endblock %}"
-                   href="{% url 'users:team_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_teams_active %}{% endblock %}" href="{% url 'users:team_list' %}">
                     <span class="material-icons me-2">groups</span>Teams
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_teammembers_active %}{% endblock %}"
-                   href="{% url 'users:teammember_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_teammembers_active %}{% endblock %}" href="{% url 'users:teammember_list' %}">
                     <span class="material-icons me-2">group</span>Team Members
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_projects_active %}{% endblock %}"
-                   href="{% url 'issues:project_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_projects_active %}{% endblock %}" href="{% url 'issues:project_list' %}">
                     <span class="material-icons me-2">folder</span>Projects
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_issues_active %}{% endblock %}"
-                   href="{% url 'issues:issue_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_issues_active %}{% endblock %}" href="{% url 'issues:issue_list' %}">
                     <span class="material-icons me-2">bug_report</span>Issues
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_my_issues_active %}{% endblock %}"
-                   href="{% url 'issues:my_issue_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_my_issues_active %}{% endblock %}" href="{% url 'issues:my_issue_list' %}">
                     <span class="material-icons me-2">task</span>My Tasks
                 </a>
-                <a class="nav-link fs-5 py-2 {% block nav_tags_active %}{% endblock %}"
-                href="{% url 'issues:tag_list' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_tags_active %}{% endblock %}" href="{% url 'issues:tag_list' %}">
                     <span class="material-icons me-2">label</span>Tags
                 </a>
                 {% if request.user.is_superuser %}
-                <a class="nav-link fs-5 py-2 {% block nav_download_db_active %}{% endblock %}"
-                href="{% url 'users:download_db' %}">
+                <a class="nav-link fs-5 py-2 {% block nav_download_db_active %}{% endblock %}" href="{% url 'users:download_db' %}">
                     <span class="material-icons me-2">download</span>Download DB
                 </a>
                 {% endif %}
             </nav>
-            <button type="button"
-                    class="btn btn-light d-flex align-items-center mt-5 fs-5 py-2 w-100 justify-content-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#logoutModal">
-                <span class="material-icons me-2">logout</span>
-                Logout
+            <button type="button" class="btn btn-light d-flex align-items-center mt-5 fs-5 py-2 w-100 justify-content-center" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                <span class="material-icons me-2">logout</span>Logout
             </button>
         </div>
 
@@ -271,40 +427,154 @@
                     <h5 class="modal-title text-white" id="logoutModalLabel">Confirm Logout</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-white-50">
-                    Are you sure you want to log out?
-                </div>
+                <div class="modal-body text-white-50">Are you sure you want to log out?</div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
                     <form method="post" action="{% url 'users:logout' %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-light text-primary fw-bold">
-                            Logout
-                        </button>
+                        <button type="submit" class="btn btn-light text-primary fw-bold">Logout</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
-        <div id="glassToast" class="toast glass-toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
-            <div class="toast-header bg-transparent border-0 text-white d-flex align-items-center">
-                <span class="material-icons text-warning me-2 fs-5" id="toastIcon">auto_awesome</span>
-                <strong class="me-auto" id="toastTitle">Notification</strong>
-                <small class="text-white-50">Just now</small>
-                <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body text-white" id="toastMessage">
-                Action completed successfully!
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Global tracking set to block repeating alert triggers
+        const layoutToastTrackerIds = new Set();
+
+        /**
+         * Triggers explosive canvas celebration confetti bursts
+         */
+        function triggerGlobalConfettiExplosion() {
+            if (typeof confetti !== 'function') return;
+            confetti({ particleCount: 60, spread: 70, origin: { y: 0.8 }, zIndex: 1200 });
+        }
+
+        /**
+         * Global Glass-Themed Toast Element Builder Engine
+         */
+        function makeLayoutGlassToast(title, message, type = 'status_changed') {
+            const container = document.getElementById('glass-toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const toastUid = Math.floor(Math.random() * 100000);
+            toast.className = `glass-toast-card ${type}`;
+            toast.id = `layout-toast-${toastUid}`;
+
+            let icon = 'notifications';
+            if (type === 'status_changed') icon = 'sync';
+            if (type === 'issue_assigned') icon = 'person_add';
+            if (type === 'management_announcement') icon = 'campaign';
+            if (type === 'admin_announcement' || type === 'system_alert') icon = 'report_problem';
+
+            const lowerMsg = message.toLowerCase();
+            if (lowerMsg.includes('done') || lowerMsg.includes('success')) {
+                icon = 'check_circle';
+            }
+
+            toast.innerHTML = `
+                <span class="material-icons glass-toast-icon">${icon}</span>
+                <div class="glass-toast-body">
+                    <div class="glass-toast-title">${title}</div>
+                    <div class="glass-toast-msg">${message}</div>
+                </div>
+                <button class="glass-toast-close" onclick="dismissLayoutToast(${toastUid})">
+                    <span class="material-icons" style="font-size: 16px;">close</span>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 50);
+
+            // Explode confetti if status is marked done or action is successful
+            if (lowerMsg.includes('done') || lowerMsg.includes('successfully')) {
+                triggerGlobalConfettiExplosion();
+            }
+
+            setTimeout(() => dismissLayoutToast(toastUid), 6000);
+        }
+
+        function dismissLayoutToast(uid) {
+            const element = document.getElementById(`layout-toast-${uid}`);
+            if (element) {
+                element.classList.remove('show');
+                setTimeout(() => element.remove(), 350);
+            }
+        }
+
+        /**
+         * Core AJAX Notification Polling Loop Engine (Runs every 30 seconds)
+         */
+        function pollLiveNotificationCenter() {
+            fetch('/notifications/api/live/', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const badge = document.getElementById('global-unread-badge');
+                const itemsContainer = document.getElementById('dropdownItemsContainer');
+
+                // 1. Manage Navbar Pill Badge Visibility
+                if (data.unread_count > 0) {
+                    badge.textContent = data.unread_count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                // 2. Populate Dropdown Panel Rows
+                if (data.notifications && data.notifications.length > 0) {
+                    const placeholder = document.getElementById('emptyNotifPlaceholder');
+                    if (placeholder) placeholder.remove();
+
+                    // Generate clean HTML block rows complete with detailed localized time strings
+                    let itemsHtml = '';
+                    data.notifications.forEach(item => {
+                        const unreadClass = item.is_read ? '' : 'unread';
+                        itemsHtml += `
+                            <div class="glass-dropdown-item ${unreadClass}" onclick="markSingleNotificationRead(${item.id})">
+                                <span class="text-white fw-bold small" style="font-size:0.8rem;">${item.title}</span>
+                                <span class="text-white-50 smaller mt-1" style="font-size:0.75rem; line-height:1.3;">${item.message}</span>
+                                <div class="d-flex justify-content-between text-muted smaller mt-1" style="font-size:0.65rem; opacity:0.6;">
+                                    <span>By: ${item.sender}</span>
+                                    <span>${item.created_at}</span>
+                                </div>
+                            </div>
+                        `;
+
+                        // 3. Trigger dynamic floating toast for fresh unread arrivals
+                        if (!item.is_read && !layoutToastTrackerIds.has(item.id)) {
+                            layoutToastTrackerIds.add(item.id);
+                            makeLayoutGlassToast(item.title, item.message, item.type);
+                        }
+                    });
+                    itemsContainer.innerHTML = itemsHtml;
+                }
+            })
+            .catch(err => console.warn("Live notification frame polling cycle suspended.", err));
+        }
+
+        /**
+         * Interactive Action: Mark a single notification row item as Read via POST
+         */
+        function markSingleNotificationRead(id) {
+            const formData = new FormData();
+            formData.append('notification_id', id);
+            
+            fetch('/notifications/api/live/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(() => pollLiveNotificationCenter()); // Trigger instant refresh to balance counters
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             const sidebar = document.getElementById('mainSidebar');
             const mainContentBody = document.getElementById('mainContentBody');
@@ -314,20 +584,74 @@
             const floatingOpenBtn = document.getElementById('sidebarFloatingOpenBtn');
             const sidebarNavigationContent = document.getElementById('sidebarNavigationContent');
 
-            // Responsive Mobile Toggle Engine Action Mapping Function
+            // --- Notification Bell Toggle Trigger Handling ---
+            const bellBtn = document.getElementById('centralNotifBellBtn');
+            const dropdownPanel = document.getElementById('centralNotifDropdown');
+            const markAllBtn = document.getElementById('markAllReadNotifBtn');
+
+            if (bellBtn && dropdownPanel) {
+                bellBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdownPanel.classList.toggle('show');
+                });
+            }
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const formData = new FormData();
+                    formData.append('mark_all', 'true');
+
+                    fetch('/notifications/api/live/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(() => {
+                        dropdownPanel.classList.remove('show');
+                        pollLiveNotificationCenter();
+                    });
+                });
+            }
+
+            // Close notification panel if clicking outside workspace bounds
+            document.addEventListener('click', function(e) {
+                if (dropdownPanel && !dropdownPanel.contains(e.target) && !bellBtn.contains(e.target)) {
+                    dropdownPanel.classList.remove('show');
+                }
+            });
+
+            // Boot up core polling schedules immediately
+            pollLiveNotificationCenter();
+            setInterval(pollLiveNotificationCenter, 30000); // 30 seconds interval
+
+            // --- Django Standard Messages Integration Broker Block ---
+            {% if messages %}
+                {% for message in messages %}
+                    // Route basic Django system messaging arrays directly through the glass layout toast engine
+                    let layoutNotifClassTag = 'status_changed';
+                    {% if message.tags == 'error' or message.tags == 'danger' %} layoutNotifClassTag = 'system_alert';
+                    {% elif message.tags == 'success' %} layoutNotifClassTag = 'issue_assigned';
+                    {% endif %}
+                    
+                    setTimeout(() => {
+                        makeLayoutGlassToast("System Update", "{{ message|safe }}", layoutNotifClassTag);
+                    }, 400);
+                {% endfor %}
+            {% endif %}
+
+            // --- Standard Layout Core Responsive Script Interactions ---
             if (mobileSidebarToggle) {
                 mobileSidebarToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const isVisible = sidebar.classList.toggle('show');
-                    
-                    // Toggle FAB icon design system states on activation
                     if (mobileToggleIcon) {
                         mobileToggleIcon.innerText = isVisible ? 'close' : 'menu';
                     }
                 });
             }
 
-            // AUTO-HIDE MECHANIC: Close sidebar immediately when clicking any navigation link
             if (sidebarNavigationContent) {
                 sidebarNavigationContent.addEventListener('click', function(e) {
                     if (window.innerWidth < 768 && e.target.closest('.nav-link')) {
@@ -337,7 +661,6 @@
                 });
             }
 
-            // Close responsive mobile menu sidebar panel cleanly if user clicks canvas outward borders bounds
             document.addEventListener('click', function(event) {
                 if (window.innerWidth < 768) {
                     const isClickInsideSidebar = sidebar.contains(event.target);
@@ -350,7 +673,6 @@
                 }
             });
 
-            // Enterprise Desktop Collapse Layout Engine Logic
             function toggleDesktopSidebar(hide) {
                 if (hide) {
                     sidebar.classList.add('hide-desktop');
@@ -369,89 +691,9 @@
             if (floatingOpenBtn) {
                 floatingOpenBtn.addEventListener('click', () => toggleDesktopSidebar(false));
             }
-
-            // --- CENTRALIZED STATUS CHANGE AJAX HANDLER ---
-            document.body.addEventListener('change', function(event) {
-                if (event.target && event.target.matches('select[name="status"], .status-select')) {
-                    const selectElement = event.target;
-                    const targetStatus = selectElement.value;
-                    const targetLabel = selectElement.options[selectElement.selectedIndex].text;
-
-                    const titleText = document.querySelector('.text-primary, h5, .fw-bold')?.innerText || "TAJ-150";
-                    const issueIdentifier = titleText.includes('/') ? titleText.split('/')[1].trim() : titleText;
-                    const issuePk = selectElement.getAttribute('data-issue-id') || issueIdentifier.split('-')[1] || "150";
-
-                    fetch(`/issues/update-status/${issuePk}/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest', 
-                            'X-CSRFToken': getBaseCsrfToken()
-                        },
-                        body: JSON.stringify({ status: targetStatus })
-                    })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network error context response.');
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            showGlassToast(
-                                'Status Updated', 
-                                `Issue ${issueIdentifier} transformed to ${data.new_status_display || targetLabel} successfully!`, 
-                                'check_circle'
-                            );
-
-                            const headerBadge = document.querySelector('.badge, [class*="bg-"], .status-badge');
-                            if (headerBadge && data.new_status_display) {
-                                headerBadge.innerText = data.new_status_display.toUpperCase();
-                                headerBadge.className = `badge ${data.new_status_class || 'bg-secondary'} text-uppercase px-3 py-2`;
-                            }
-                        } else {
-                            alert('Error: ' + (data.error || 'Unable to update status choice.'));
-                        }
-                    })
-                    .catch(err => {
-                        console.error('AJAX operation failure context:', err);
-                        showGlassToast('Status Syncing', 'Status changed successfully! Synchronizing system...', 'sync');
-                        setTimeout(() => window.location.reload(), 1200);
-                    });
-                }
-            });
-
-            function getBaseCsrfToken() {
-                let token = null;
-                if (document.cookie && document.cookie !== '') {
-                    const splitCookies = document.cookie.split(';');
-                    for (let i = 0; i < splitCookies.length; i++) {
-                        const c = splitCookies[i].trim();
-                        if (c.substring(0, 10) === 'csrftoken=') {
-                            token = decodeURIComponent(c.substring(10));
-                            break;
-                        }
-                    }
-                }
-                return token;
-            }
         });
-
-        function showGlassToast(title, message, icon = 'auto_awesome') {
-            document.getElementById('toastTitle').innerText = title;
-            document.getElementById('toastMessage').innerText = message;
-            document.getElementById('toastIcon').innerText = icon;
-
-            const toastElement = document.getElementById('glassToast');
-            const toast = new bootstrap.Toast(toastElement);
-            toast.show();
-
-            confetti({
-                particleCount: 80,
-                spread: 60,
-                origin: { x: 0.94, y: 0.06 },
-                colors: ['#6366f1', '#22c55e', '#eab308', '#ec4899', '#38bdf8']
-            });
-        }
     </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

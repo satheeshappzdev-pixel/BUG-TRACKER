@@ -609,7 +609,7 @@ class MyIssueListView(LoginRequiredMixin, ListView):
         all_choices = dict(Issue.StatusChoices.choices if hasattr(Issue, 'StatusChoices') else IssueStatusChoices.choices)
         
         if role == TeamMemberRoleChoices.DEVELOPER:
-            allowed_keys = ['open' ,'dev_in_progress', 'in_review', 'hold', 'ready_for_qa', ]
+            allowed_keys = ['open' ,'dev_in_progress', 'scope_review', 'in_review', 'hold', 'ready_for_qa', ]
         elif role == TeamMemberRoleChoices.QA:
             allowed_keys = ['open' ,'qa_in_progress', 'hold', 'scope_review', 'rejected', 'done', 'closed', 'reopen']
         else:

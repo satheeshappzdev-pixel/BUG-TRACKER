@@ -5,6 +5,8 @@
 {% block nav_my_issues_active %}active{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 <style>
     /* Compact Typography & Design System */
     body {
@@ -183,18 +185,43 @@
         border-color: rgba(255, 255, 255, 0.2);
     }
 
-    /* Dark Themed Custom Modals matching Dashboard System */
-    .modal-dark-theme .modal-content {
-        background-color: #121824;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-        color: #ffffff;
+    /* --- FIXED: Deep Transparency Glass-Themed Dark Modal Engine --- */
+    .modal-glass-toast .modal-content {
+        background: rgba(18, 24, 36, 0.65) !important; /* Low opacity alpha value matching the toast message cards */
+        backdrop-filter: blur(20px) saturate(220%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(220%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-left: 5px solid #f6c23e !important; /* Context warning bar fallback color code */
+        border-radius: 14px !important;
+        color: #ffffff !important;
+        box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85) !important;
     }
-    .modal-dark-theme .modal-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* Nullify standard dark-theme bootstrap block overlays completely */
+    .modal-glass-toast .modal-header,
+    .modal-glass-toast .modal-footer,
+    .modal-glass-toast .modal-body {
+        background: transparent !important;
+        border: none !important;
     }
-    .modal-dark-theme .modal-footer {
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    
+    .modal-glass-toast .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 18px 22px;
+    }
+    .modal-glass-toast .modal-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 14px 22px;
+    }
+    .modal-glass-toast .modal-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.2px;
+    }
+    .modal-glass-toast-body-text {
+        font-size: 0.825rem;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.5;
     }
 
     /* Integrated Primary Theme Action CTA Controls */
@@ -208,13 +235,52 @@
         border-color: #375ac2 !important;
     }
 
-    .glass-card {
-        background: rgba(255, 255, 255, 0.05) !important; 
-        backdrop-filter: blur(12px) saturate(180%);
-        -webkit-backdrop-filter: blur(12px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    /* --- Floating Glass Toast Engine CSS System --- */
+    #glass-toast-container {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 1099;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 360px;
+        pointer-events: none;
     }
+    .glass-toast-card {
+        pointer-events: auto;
+        background: rgba(18, 24, 36, 0.85);
+        backdrop-filter: blur(14px) saturate(190%);
+        -webkit-backdrop-filter: blur(14px) saturate(190%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 4px solid #4e73df; /* Custom primary identity default */
+        border-radius: 10px;
+        padding: 16px;
+        color: #ffffff;
+        box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transform: translateX(420px);
+        transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        opacity: 0;
+    }
+    .glass-toast-card.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    /* Toast Type Color Variance Modifiers */
+    .glass-toast-card.status_changed { border-left-color: #f6c23e; } /* Warning status yellow */
+    .glass-toast-card.issue_assigned { border-left-color: #1cc88a; } /* Success assignment green */
+    .glass-toast-card.management_announcement { border-left-color: #a370f7; } /* Management broad purple */
+    .glass-toast-card.admin_announcement, .glass-toast-card.system_alert { border-left-color: #e74a3b; } /* High-priority alert red */
+
+    .glass-toast-icon { font-size: 20px; margin-top: 2px; }
+    .glass-toast-body { flex: 1; }
+    .glass-toast-title { font-weight: 700; font-size: 0.875rem; margin-bottom: 2px; letter-spacing: 0.2px; }
+    .glass-toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.65); line-height: 1.4; }
+    .glass-toast-close { background: none; border: none; color: rgba(255, 255, 255, 0.4); cursor: pointer; padding: 0; font-size: 16px; transition: color 0.2s; }
+    .glass-toast-close:hover { color: #ffffff; }
 
     /* Dynamic responsive sizing for handling 14 dashboard metric items nicely */
     @media (min-width: 1400px) {
@@ -228,32 +294,36 @@
 
 {% block dashboard_content %}
 
-<div class="modal fade" id="statusConfirmModal" {{ 'tabindex="-1"'|safe }} aria-labelledby="statusConfirmModalLabel" aria-hidden="true">
+<div id="glass-toast-container"></div>
+
+<div class="modal fade modal-glass-toast" id="statusConfirmModal" {{ 'tabindex="-1"'|safe }} aria-labelledby="statusConfirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-card">
-            <div class="modal-header border-0">
-                <h5 class="modal-title text-white" id="statusConfirmModalLabel">
-                    <i class="material-icons text-warning align-middle me-2">auto_awesome</i>Confirm Status Transformation
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center" id="statusConfirmModalLabel">
+                    <span class="material-icons text-warning me-2" style="font-size: 20px;">sync</span>Confirm Status Transformation
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="glass-toast-close ms-auto" data-bs-dismiss="modal" aria-label="Close">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
-            <div class="modal-body text-white">
-                <p class="text-white-50 small mb-3">Are you sure you want to perform this system state transformation rule change?</p>
+            <div class="modal-body">
+                <p class="modal-glass-toast-body-text mb-3">Are you sure you want to perform this system state transformation rule change?</p>
                 
-                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-10 small">
+                <div class="p-3 rounded bg-black bg-opacity-40 border border-white border-opacity-5 small">
                     <div class="mb-1">
-                        <span class="text-white-50">Target Task:</span> 
-                        <span id="modalIssueIdentifier" class="fw-bold text-info ms-1">TAJ-150 - Server side log issue</span>
+                        <span style="color: rgba(255,255,255,0.45)">Task:</span> 
+                        <span id="modalIssueIdentifier" class="fw-bold text-white ms-1">TAJ-150 - Server side log issue</span>
                     </div>
                     <div>
-                        <span class="text-white-50">Target Update:</span> 
-                        <span class="badge bg-primary ms-1 text-uppercase" id="modalTargetLabel">In Review</span>
+                        <span style="color: rgba(255,255,255,0.45)">Status:</span> 
+                        <span class="badge bg-primary ms-1 text-uppercase" id="modalTargetLabel" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; border-radius: 4px;">In Review</span>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-sm text-white-50 text-hover-white" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-sm btn-primary px-3 fw-bold" id="executeStatusUpdateBtn">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm text-white-50 text-hover-white border-0 bg-transparent px-3" data-bs-dismiss="modal" style="font-size: 0.8rem;">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary px-3 fw-bold" id="executeStatusUpdateBtn" style="border-radius: 6px; font-size: 0.8rem; background-color: #4e73df; border: none;">
                     Confirm & Apply
                 </button>
             </div>
@@ -278,7 +348,7 @@
             </div>
         </div>
 
-        {# Metric Grid Section: Render all metrics cards seamlessly across rows #}
+        {# Metric Grid Section #}
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 row-cols-xxl-7 g-2 mb-3">
             <div class="col">
                 <div class="metric-box">
@@ -380,7 +450,7 @@
             </div>
         </div>
 
-        {# Filter Pills Section: Modified to support filtering across all options smoothly #}
+        {# Filter Pills Section #}
         <div class="d-flex gap-2 mb-2 overflow-auto pb-1 flex-wrap">
             <a href="?status=&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if not current_status %}btn-light{% else %}btn-outline-secondary text-white{% endif %}">All Status</a>
             <a href="?status=open&date_filter={{ current_date_filter }}" class="btn btn-sm px-3 rounded-pill {% if current_status == 'open' %}btn-info text-dark{% else %}btn-outline-info text-white{% endif %}">Open</a>
@@ -506,12 +576,10 @@
                                             data-initial-val="{{ issue.status }}">
                                         
                                         {% if status_choices %}
-                                            {# Dynamically fetch choices context direct from the views layer if passed #}
                                             {% for value, label in status_choices %}
                                                 <option value="{{ value }}" {% if issue.status == value %}selected{% endif %}>{{ label }}</option>
                                             {% endfor %}
                                         {% else %}
-                                            {# Reliable hardcoded mirror mapping of IssueStatusChoices #}
                                             <option value="open" {% if issue.status == 'open' %}selected{% endif %}>Open</option>
                                             <option value="dev_in_progress" {% if issue.status == 'dev_in_progress' %}selected{% endif %}>Dev In Progress</option>
                                             <option value="ready_for_qa" {% if issue.status == 'ready_for_qa' %}selected{% endif %}>Ready for QA</option>
@@ -540,8 +608,149 @@
         </div>
 
         <script>
+        // Track unique notification IDs to ensure individual alerts only display once per session
+        const manifestedToastTrackerIds = new Set();
+
+        /**
+         * Triggers a realistic canvas confetti shockwave eruption from the bottom corners
+         */
+        function triggerCelebrationConfetti() {
+            if (typeof confetti !== 'function') return;
+            
+            const duration = 2.5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 28, spread: 360, ticks: 50, zIndex: 1150 }; // Lifted z-index to clear modals comfortably
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 45 * (timeLeft / duration);
+                
+                // Fire explosive bursts from the bottom left and bottom right corners
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+        }
+
+        /**
+         * Global Dynamic Glass-Themed Toast Generator Engine 
+         */
+        function showGlassToast(title, message, type = 'status_changed') {
+            const toastContainer = document.getElementById('glass-toast-container');
+            if (!toastContainer) return;
+
+            const toastCard = document.createElement('div');
+            const randomId = Math.floor(Math.random() * 100000);
+            toastCard.className = `glass-toast-card ${type}`;
+            toastCard.id = `glass-toast-${randomId}`;
+
+            // Map context-specific Google Material icon structures
+            let iconCode = 'notifications';
+            if (type === 'status_changed') iconCode = 'sync';
+            if (type === 'issue_assigned') iconCode = 'person_add';
+            if (type === 'management_announcement') iconCode = 'campaign';
+            if (type === 'admin_announcement' || type === 'system_alert') iconCode = 'report_problem';
+
+            const normalizedMsg = message.toLowerCase();
+
+            // Custom upgrade rule: If the title or message hints at completion/success, change the icon
+            if (normalizedMsg.includes('done') || title.toLowerCase().includes('transformed')) {
+                iconCode = 'check_circle';
+            }
+
+            toastCard.innerHTML = `
+                <span class="material-icons glass-toast-icon">${iconCode}</span>
+                <div class="glass-toast-body">
+                    <div class="glass-toast-title">${title}</div>
+                    <div class="glass-toast-msg">${message}</div>
+                </div>
+                <button class="glass-toast-close" onclick="dismissGlassToast(${randomId})">
+                    <span class="material-icons" style="font-size: 16px;">close</span>
+                </button>
+            `;
+
+            toastContainer.appendChild(toastCard);
+
+            // Trigger reflow engine to manifest transition slide-in animation
+            setTimeout(() => toastCard.classList.add('show'), 40);
+
+            // Fire confetti burst if it represents a successful completion or "Done" state conversion
+            if (normalizedMsg.includes('done') || type === 'issue_assigned') {
+                triggerCelebrationConfetti();
+            }
+
+            // Self-garbage collection hook: automatically clear the element out after 6 seconds
+            setTimeout(() => dismissGlassToast(randomId), 6000);
+        }
+
+        /**
+         * Closes and removes active toast components smoothly
+         */
+        function dismissGlassToast(uniqueId) {
+            const structuralTarget = document.getElementById(`glass-toast-${uniqueId}`);
+            if (structuralTarget) {
+                structuralTarget.classList.remove('show');
+                setTimeout(() => structuralTarget.remove(), 350);
+            }
+        }
+
+        /**
+         * Background Long-Polling AJAX Request System Loop
+         */
+        function executeLiveNotificationPolling() {
+            fetch('/notifications/api/live/', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("API stream connection offline.");
+                return res.json();
+            })
+            .then(payload => {
+                const structuralNavbarBadge = document.getElementById('global-unread-badge') || document.querySelector('.notification-badge');
+                
+                if (structuralNavbarBadge) {
+                    if (payload.unread_count > 0) {
+                        structuralNavbarBadge.textContent = payload.unread_count;
+                        structuralNavbarBadge.style.display = 'block';
+                    } else {
+                        structuralNavbarBadge.style.display = 'none';
+                    }
+                }
+
+                // Parse payload collections; evaluate unique instances for dispatching toast events
+                if (payload.notifications && Array.isArray(payload.notifications)) {
+                    payload.notifications.forEach(item => {
+                        if (!item.is_read && !manifestedToastTrackerIds.has(item.id)) {
+                            manifestedToastTrackerIds.add(item.id);
+                            
+                            // Map incoming background notification model types to dashboard css classes
+                            let trackingStyleClass = 'status_changed';
+                            if (item.type === 'ISSUE_ASSIGNED') trackingStyleClass = 'issue_assigned';
+                            
+                            showGlassToast(item.title, item.message, trackingStyleClass);
+                        }
+                    });
+                }
+            })
+            .catch(err => console.warn("Live context monitoring polling tick suspended:", err));
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             
+            // Invoke the poll execution routines immediately on asset configuration complete
+            executeLiveNotificationPolling();
+            // Continuously execute delta sweeps every 15 seconds to look for background events
+            setInterval(executeLiveNotificationPolling, 15000);
+
             // Shared State Context Tracking Objects
             let activeTransferContext = null;
             const statusModalElement = document.getElementById('statusConfirmModal');
@@ -577,6 +786,20 @@
                     document.getElementById('modalIssueIdentifier').textContent = `${codeLabelText} - ${titleText}`;
                     document.getElementById('modalTargetLabel').textContent = selectedLabel;
 
+                    // Dynamically alter the modal's left accent strip to match the target status color profile
+                    const modalContent = statusModalElement.querySelector('.modal-content');
+                    if (modalContent) {
+                        if (tentativeVal === 'done') {
+                            modalContent.style.setProperty('border-left-color', '#1cc88a', 'important'); // Green for complete
+                        } else if (['dev_in_progress', 'qa_in_progress', 'reopen'].includes(tentativeVal)) {
+                            modalContent.style.setProperty('border-left-color', '#f6c23e', 'important'); // Yellow for active dev/qa
+                        } else if (['open', 'in_review'].includes(tentativeVal)) {
+                            modalContent.style.setProperty('border-left-color', '#4e73df', 'important'); // Blue for staging
+                        } else {
+                            modalContent.style.setProperty('border-left-color', '#e74a3b', 'important'); // Red/Gray for critical parameters
+                        }
+                    }
+
                     // Expose confirmation UI layer
                     nativeModalInstance.show();
                 }
@@ -602,11 +825,16 @@
                 confirmationSubmitTrigger.disabled = true;
                 confirmationSubmitTrigger.textContent = "Processing...";
 
+                // OPTIMIZATION: If targeted value turns directly to "done", fire confetti immediately inside viewport!
+                if (ctx.statusValue === 'done') {
+                    triggerCelebrationConfetti();
+                }
+
                 fetch(ctx.targetUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest', // MAKES THE DJANGO VIEW RESPOND
+                        'X-Requested-With': 'XMLHttpRequest', 
                         'X-CSRFToken': csrftoken
                     },
                     body: JSON.stringify({ 'status': ctx.statusValue })
@@ -634,19 +862,18 @@
                         // Commit permanent data updates to context values
                         trackingSelector.setAttribute('data-initial-val', ctx.statusValue);
                         
-                        // TRIGGER GLOBAL GLASS TOAST & CELEBRATION CONFETTI
-                        if (typeof showGlassToast === 'function') {
-                            showGlassToast(
-                                'Status Transformed', 
-                                `Issue ${trackingCodeLabel} successfully updated to "${data.new_status_display || ctx.statusLabel}"!`, 
-                                'check_circle'
-                            );
-                        }
+                        // Local instant user feedback trigger
+                        showGlassToast(
+                            'Status Transformed', 
+                            `Issue ${trackingCodeLabel} successfully updated to "${data.new_status_display || ctx.statusLabel}"!`, 
+                            ctx.statusValue === 'done' ? 'issue_assigned' : 'status_changed'
+                        );
+                        
+                        // Immediately invoke a background query run to match metric delta counters cleanly
+                        setTimeout(executeLiveNotificationPolling, 800);
                     } else {
                         trackingSelector.value = trackingSelector.getAttribute('data-initial-val');
-                        if (typeof showGlassToast === 'function') {
-                            showGlassToast('Update Rejected', data.error || 'Server rejected changes.', 'error');
-                        }
+                        showGlassToast('Update Rejected', data.error || 'Server rejected changes.', 'admin_announcement');
                     }
                 })
                 .catch(error => {
@@ -656,9 +883,7 @@
                         activeTransferContext = null;
                     }
                     nativeModalInstance.hide();
-                    if (typeof showGlassToast === 'function') {
-                        showGlassToast('Connection Error', 'Network failure or lifecycle expiration error.', 'sync_problem');
-                    }
+                    showGlassToast('Connection Error', 'Network failure or lifecycle expiration error.', 'system_alert');
                 })
                 .finally(() => {
                     confirmationSubmitTrigger.disabled = false;

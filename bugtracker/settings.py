@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'issues',
     'projects',
     'users',
+    'notifications',
 
     'cloudinary_storage',
     'cloudinary',

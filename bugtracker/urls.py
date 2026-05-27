@@ -8,6 +8,7 @@ urlpatterns = [
     path('', include('issues.urls')),
     path('', include('projects.urls')),
     path('', include('users.urls')),
+    path('', include('notifications.urls')),
 ]
 
 # Static + Media files (Development only)
