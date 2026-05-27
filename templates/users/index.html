@@ -144,18 +144,24 @@
         justify-content: center;
     }
 
-    /* --- Floating Top-Right Glass Notification Bell & Floating Button --- */
+    /* --- Isolated Custom Glass Notification Component System --- */
     .floating-notif-center-wrapper {
         position: fixed;
-        top: 20px;
+        top: 30px;
         right: 24px;
         z-index: 1040;
         display: flex;
         align-items: center;
     }
+
+    .layout-bell-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
     .floating-bell-pill-btn {
-        width: 44px;
-        height: 44px;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         background: rgba(18, 24, 36, 0.7);
         backdrop-filter: blur(14px) saturate(180%);
@@ -167,49 +173,69 @@
         justify-content: center;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         cursor: pointer;
-        position: relative;
         transition: transform 0.2s, background-color 0.2s;
     }
+
     .floating-bell-pill-btn:hover {
         background: rgba(18, 24, 36, 0.9);
         transform: translateY(-1px);
     }
-    .floating-bell-badge {
+
+    /* Red Active Counter Badge Micro-Animation Trigger */
+    @keyframes layoutBadgeBounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.18); }
+    }
+
+    .layout-bell-counter-badge {
         position: absolute;
         top: -2px;
         right: -2px;
-        background-color: #e74a3b; /* Pure red dashboard indicator color */
+        background-color: #fc0a0a; /* Pure red dashboard indicator color */
         color: white;
-        font-size: 0.65rem;
+        font-size: 0.75rem;
         font-weight: 700;
         min-width: 18px;
         height: 18px;
         border-radius: 10px;
-        display: none; /* Controlled dynamically via JS */
+        display: none; /* Managed dynamically via JavaScript */
         align-items: center;
         justify-content: center;
         padding: 0 4px;
         box-shadow: 0 0 0 2px #0a102e;
+        animation: layoutBadgeBounce 2.5s infinite ease-in-out;
+        z-index: 10;
     }
 
-    /* --- Floating Dropdown Menu System Layout --- */
-    .glass-dropdown-panel {
+    /* Micro-Interaction Animation for Panel Entry */
+    @keyframes layoutDropdownFadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .layout-bell-dropdown-panel {
         position: absolute;
-        top: 54px;
+        top: 64px;
         right: 0;
-        width: 350px;
-        background: rgba(18, 24, 36, 0.93);
-        backdrop-filter: blur(24px) saturate(200%);
-        -webkit-backdrop-filter: blur(24px) saturate(200%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 14px;
-        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.7);
+        width: 360px;
+        background: rgba(18, 24, 36, 0.95);
+        backdrop-filter: blur(25px) saturate(200%);
+        -webkit-backdrop-filter: blur(25px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
         display: none;
         flex-direction: column;
         overflow: hidden;
+        z-index: 1080;
     }
-    .glass-dropdown-panel.show { display: flex; }
-    .glass-dropdown-header {
+
+    .layout-bell-dropdown-panel.layout-show {
+        display: flex;
+        animation: layoutDropdownFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .layout-bell-dropdown-header {
         padding: 14px 18px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
@@ -220,51 +246,59 @@
     }
     
     /* Sleek Custom Scrollbar for Glass Menu Dropdown panel */
-    .glass-dropdown-scrollable {
+    .layout-bell-scroll-container {
         max-height: 350px;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     }
-    .glass-dropdown-scrollable::-webkit-scrollbar {
+    .layout-bell-scroll-container::-webkit-scrollbar {
         width: 5px;
     }
-    .glass-dropdown-scrollable::-webkit-scrollbar-track {
+    .layout-bell-scroll-container::-webkit-scrollbar-track {
         background: transparent;
     }
-    .glass-dropdown-scrollable::-webkit-scrollbar-thumb {
+    .layout-bell-scroll-container::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.15);
         border-radius: 10px;
     }
     
-    .glass-dropdown-item {
+    .layout-bell-row-item {
         padding: 14px 18px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: background 0.2s;
+        transition: background-color 0.2s ease;
         cursor: pointer;
         display: flex;
         flex-direction: column;
         gap: 4px;
     }
-    .glass-dropdown-item:hover { background: rgba(255, 255, 255, 0.04); }
-    .glass-dropdown-item.unread { background: rgba(78, 115, 223, 0.06); }
-    .glass-dropdown-item.unread:hover { background: rgba(78, 115, 223, 0.1); }
+    .layout-bell-row-item:hover { background-color: rgba(255, 255, 255, 0.04); }
+    .layout-bell-row-item.layout-unread { background-color: rgba(78, 115, 223, 0.08); }
+    .layout-bell-row-item.layout-unread:hover { background-color: rgba(78, 115, 223, 0.14); }
     
-    .glass-dropdown-footer {
+    .layout-bell-meta-footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        opacity: 0.6;
+        margin-top: 2px;
+    }
+
+    .layout-bell-redirect-footer {
         padding: 14px;
         text-align: center;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(0, 0, 0, 0.2);
     }
-    .glass-dropdown-footer a {
+    .layout-bell-redirect-footer a {
         color: #4e73df;
         text-decoration: none;
         font-size: 0.825rem;
         font-weight: 700;
         display: inline-block;
-        padding-top: 2px; /* Extra top padding shift */
+        transition: color 0.2s;
     }
-    .glass-dropdown-footer a:hover { color: #60a5fa; }
+    .layout-bell-redirect-footer a:hover { color: #60a5fa; }
 
     /* --- Floating Glass Toast Engine CSS System --- */
     #glass-toast-container {
@@ -309,7 +343,15 @@
     .glass-toast-close { background: none; border: none; color: rgba(255, 255, 255, 0.4); cursor: pointer; padding: 0; font-size: 16px; }
     .glass-toast-close:hover { color: #ffffff; }
 
-    /* Media Queries for Responsive Sidebar Logic */
+    /* Accordion Row Modifiers */
+    .Accordion-arrow-icon {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-block;
+    }
+    .issue-card.is-open .Accordion-arrow-icon {
+        transform: rotate(180deg) !important;
+    }
+
     @media (max-width: 767.98px) {
         .sidebar {
             transform: translateX(-100%); 
@@ -339,23 +381,27 @@
     <div id="glass-toast-container"></div>
 
     <div class="floating-notif-center-wrapper">
-        <div class="floating-bell-pill-btn" id="centralNotifBellBtn" title="View Notifications Dashboard">
-            <span class="material-icons" style="font-size: 22px;">notifications</span>
-            <span class="floating-bell-badge" id="global-unread-badge">0</span>
-        </div>
-        
-        <div class="glass-dropdown-panel" id="centralNotifDropdown">
-            <div class="glass-dropdown-header text-white">
-                <span>Notifications Feed</span>
-                <span class="text-white-50 smaller fw-normal cursor-pointer" id="markAllReadNotifBtn" style="cursor: pointer; font-size: 0.75rem; color: #4e73df !important;">Mark all as read</span>
+        <div class="layout-bell-wrapper">
+            <div class="floating-bell-pill-btn" id="layoutUniqueBellTriggerBtn" title="Toggle Notifications Panel">
+                <span class="material-icons" style="font-size: 22px;">notifications</span>
+                <span class="layout-bell-counter-badge" id="layoutUniqueBellBadgeCounter">0</span>
             </div>
-            <div class="glass-dropdown-scrollable" id="dropdownItemsContainer">
-                <div class="text-center py-4 text-white-50 small" id="emptyNotifPlaceholder">
-                    <span class="material-icons d-block mb-1 opacity-50">notifications_off</span> No new alerts
+            
+            <div class="layout-bell-dropdown-panel" id="layoutUniqueBellDropdownPanel">
+                <div class="layout-bell-dropdown-header text-white">
+                    <span>Notifications Feed</span>
+                    <span id="layoutUniqueMarkAllReadBtn" style="cursor: pointer; font-size: 0.75rem; color: #4e73df !important; font-weight: 700;">Mark all as read</span>
                 </div>
-            </div>
-            <div class="glass-dropdown-footer">
-                <a href="{% url 'notifications:inbox_list' %}">Go to Notifications Inbox View →</a>
+                
+                <div class="layout-bell-scroll-container" id="layoutUniqueBellItemsContainer">
+                    <div class="text-center py-4 text-white-50 small" id="layoutUniqueEmptyPlaceholder">
+                        <span class="material-icons d-block mb-1 opacity-50">notifications_off</span> No new alerts
+                    </div>
+                </div>
+                
+                <div class="layout-bell-redirect-footer">
+                    <a href="{% url 'notifications:inbox_list' %}" id="layoutUniqueInboxRedirectBtn">Go to Notifications Inbox View →</a>
+                </div>
             </div>
         </div>
     </div>
@@ -446,6 +492,49 @@
         const layoutToastTrackerIds = new Set();
 
         /**
+         * Parses dates securely to create custom relative outputs like "5 minutes ago"
+         */
+        function layoutFormatRelativeTime(dateString) {
+            if (!dateString) return '';
+            if (dateString.includes('ago') || dateString.includes('now')) {
+                return dateString;
+            }
+
+            try {
+                const now = new Date();
+                let past = new Date(dateString);
+                
+                // Fallback catch parameters for custom short strings lacking explicit descriptors
+                if (isNaN(past.getTime())) {
+                    const currentYear = now.getFullYear();
+                    const testDate = new Date(`${dateString} ${currentYear}`);
+                    if (!isNaN(testDate.getTime())) {
+                        past = testDate;
+                    } else {
+                        return dateString; 
+                    }
+                }
+
+                const secondsDiff = Math.floor((now - past) / 1000);
+                if (secondsDiff < 5 || secondsDiff < 0) return 'Just now';
+                if (secondsDiff < 60) return `${secondsDiff} seconds ago`;
+
+                const minutesDiff = Math.floor(secondsDiff / 60);
+                if (minutesDiff < 60) return `${minutesDiff} minute${minutesDiff > 1 ? 's' : ''} ago`;
+
+                const hoursDiff = Math.floor(minutesDiff / 60);
+                if (hoursDiff < 24) return `${hoursDiff} hour${hoursDiff > 1 ? 's' : ''} ago`;
+
+                const daysDiff = Math.floor(hoursDiff / 24);
+                if (daysDiff < 30) return `${daysDiff} day${daysDiff > 1 ? 's' : ''} ago`;
+
+                return past.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        /**
          * Triggers explosive canvas celebration confetti bursts
          */
         function triggerGlobalConfettiExplosion() {
@@ -490,7 +579,6 @@
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 50);
 
-            // Explode confetti if status is marked done or action is successful
             if (lowerMsg.includes('done') || lowerMsg.includes('successfully')) {
                 triggerGlobalConfettiExplosion();
             }
@@ -516,8 +604,10 @@
             })
             .then(res => res.json())
             .then(data => {
-                const badge = document.getElementById('global-unread-badge');
-                const itemsContainer = document.getElementById('dropdownItemsContainer');
+                const badge = document.getElementById('layoutUniqueBellBadgeCounter');
+                const itemsContainer = document.getElementById('layoutUniqueBellItemsContainer');
+
+                if (!badge || !itemsContainer) return;
 
                 // 1. Manage Navbar Pill Badge Visibility
                 if (data.unread_count > 0) {
@@ -529,20 +619,19 @@
 
                 // 2. Populate Dropdown Panel Rows
                 if (data.notifications && data.notifications.length > 0) {
-                    const placeholder = document.getElementById('emptyNotifPlaceholder');
-                    if (placeholder) placeholder.remove();
-
-                    // Generate clean HTML block rows complete with detailed localized time strings
                     let itemsHtml = '';
                     data.notifications.forEach(item => {
-                        const unreadClass = item.is_read ? '' : 'unread';
+                        const unreadClass = item.is_read ? '' : 'layout-unread';
+                        const timeAgoText = layoutFormatRelativeTime(item.created_at);
+                        const senderName = item.sender || "System";
+
                         itemsHtml += `
-                            <div class="glass-dropdown-item ${unreadClass}" onclick="markSingleNotificationRead(${item.id})">
+                            <div class="layout-bell-row-item ${unreadClass}" onclick="markSingleNotificationRead(${item.id})">
                                 <span class="text-white fw-bold small" style="font-size:0.8rem;">${item.title}</span>
                                 <span class="text-white-50 smaller mt-1" style="font-size:0.75rem; line-height:1.3;">${item.message}</span>
-                                <div class="d-flex justify-content-between text-muted smaller mt-1" style="font-size:0.65rem; opacity:0.6;">
-                                    <span>By: ${item.sender}</span>
-                                    <span>${item.created_at}</span>
+                                <div class="layout-bell-meta-footer text-muted">
+                                    <span>From: <strong>${senderName}</strong></span>
+                                    <span>${timeAgoText}</span>
                                 </div>
                             </div>
                         `;
@@ -554,6 +643,12 @@
                         }
                     });
                     itemsContainer.innerHTML = itemsHtml;
+                } else {
+                    itemsContainer.innerHTML = `
+                        <div class="text-center py-4 text-white-50 small" id="layoutUniqueEmptyPlaceholder">
+                            <span class="material-icons d-block mb-1 opacity-50">notifications_off</span> No new alerts
+                        </div>
+                    `;
                 }
             })
             .catch(err => console.warn("Live notification frame polling cycle suspended.", err));
@@ -572,7 +667,7 @@
                 body: formData
             })
             .then(res => res.json())
-            .then(() => pollLiveNotificationCenter()); // Trigger instant refresh to balance counters
+            .then(() => pollLiveNotificationCenter());
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -585,14 +680,25 @@
             const sidebarNavigationContent = document.getElementById('sidebarNavigationContent');
 
             // --- Notification Bell Toggle Trigger Handling ---
-            const bellBtn = document.getElementById('centralNotifBellBtn');
-            const dropdownPanel = document.getElementById('centralNotifDropdown');
-            const markAllBtn = document.getElementById('markAllReadNotifBtn');
+            const bellBtn = document.getElementById('layoutUniqueBellTriggerBtn');
+            const dropdownPanel = document.getElementById('layoutUniqueBellDropdownPanel');
+            const markAllBtn = document.getElementById('layoutUniqueMarkAllReadBtn');
+
+            // Lifecyle Hooks for Accordion States
+            document.addEventListener('show.bs.collapse', function (e) {
+                const targetCard = e.target.closest('.issue-card');
+                if (targetCard) targetCard.classList.add('is-open');
+            });
+
+            document.addEventListener('hide.bs.collapse', function (e) {
+                const targetCard = e.target.closest('.issue-card');
+                if (targetCard) targetCard.classList.remove('is-open');
+            });
 
             if (bellBtn && dropdownPanel) {
                 bellBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    dropdownPanel.classList.toggle('show');
+                    dropdownPanel.classList.toggle('layout-show');
                 });
             }
 
@@ -609,7 +715,7 @@
                     })
                     .then(res => res.json())
                     .then(() => {
-                        dropdownPanel.classList.remove('show');
+                        dropdownPanel.classList.remove('layout-show');
                         pollLiveNotificationCenter();
                     });
                 });
@@ -618,18 +724,17 @@
             // Close notification panel if clicking outside workspace bounds
             document.addEventListener('click', function(e) {
                 if (dropdownPanel && !dropdownPanel.contains(e.target) && !bellBtn.contains(e.target)) {
-                    dropdownPanel.classList.remove('show');
+                    dropdownPanel.classList.remove('layout-show');
                 }
             });
 
-            // Boot up core polling schedules immediately
+            // Initial boot cycle triggers
             pollLiveNotificationCenter();
             setInterval(pollLiveNotificationCenter, 30000); // 30 seconds interval
 
             // --- Django Standard Messages Integration Broker Block ---
             {% if messages %}
                 {% for message in messages %}
-                    // Route basic Django system messaging arrays directly through the glass layout toast engine
                     let layoutNotifClassTag = 'status_changed';
                     {% if message.tags == 'error' or message.tags == 'danger' %} layoutNotifClassTag = 'system_alert';
                     {% elif message.tags == 'success' %} layoutNotifClassTag = 'issue_assigned';
@@ -666,6 +771,10 @@
                     const isClickInsideSidebar = sidebar.contains(event.target);
                     const isClickOnToggle = mobileSidebarToggle ? mobileSidebarToggle.contains(event.target) : false;
                     
+                    if (event.target.closest('.issue-card') || event.target.closest('.modal')) {
+                        return;
+                    }
+
                     if (!isClickInsideSidebar && !isClickOnToggle && sidebar.classList.contains('show')) {
                         sidebar.classList.remove('show');
                         if (mobileToggleIcon) mobileToggleIcon.innerText = 'menu';

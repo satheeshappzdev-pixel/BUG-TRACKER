@@ -116,10 +116,13 @@
         display: flex;
         align-items: center;
     }
+    
+    /* FIX: Arrow Rotation Logic */
     .Accordion-arrow-icon {
         transition: transform 0.2s ease-in-out;
+        display: inline-block;
     }
-    [aria-expanded="true"] .Accordion-arrow-icon {
+    [data-bs-toggle="collapse"][aria-expanded="true"] .Accordion-arrow-icon {
         transform: rotate(180deg);
     }
 
@@ -425,7 +428,7 @@
                                     <span class="status-pill bg-{% if issue.status == 'open' %}info{% elif issue.status == 'done' %}success{% else %}warning{% endif %} text-dark text-center" style="width:160px; display: inline-block;">
                                         {{ issue.get_status_display }}
                                     </span>
-                                    <span class="material-icons text-white-50 Accordion-arrow-icon" style="transition: transform 0.2s ease;">expand_more</span>
+                                    <span class="material-icons text-white-50 Accordion-arrow-icon">expand_more</span>
                                 </div>
                             </div>
 

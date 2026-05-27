@@ -94,12 +94,13 @@ class UserNotificationAPIView(LoginRequiredMixin, View):
     
 
 from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserNotificationStatus
 
 class UserNotificationListView(LoginRequiredMixin, ListView):
     """
-    Renders a dedicated, full-page scrolling inbox list 
-    displaying all notification feed entries for the current user.
+    Renders a dedicated, full-page scrolling inbox list with interactive
+    filter states displaying notification entries for the active user.
     """
     model = UserNotificationStatus
     template_name = 'notifications/inbox_list.html'
@@ -107,9 +108,30 @@ class UserNotificationListView(LoginRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        # Optimized with select_related to pull notification details and targets smoothly
-        return (
+        # 1. Base optimized queryset for the authenticated user
+        queryset = (
             UserNotificationStatus.objects.filter(user=self.request.user)
-            .select_related('notification', 'notification__sender')
+            .select_related('notification', 'notification__sender', 'notification__content_type')
             .order_by('-notification__created_at')
         )
+
+        # 2. Extract filter tag parameter from request query string
+        self.current_filter = self.request.GET.get('filter', 'all')
+
+        # 3. Apply operational criteria mutations
+        if self.current_filter == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif self.current_filter == 'status_changed':
+            queryset = queryset.filter(notification__notification_type='STATUS_CHANGED')
+        elif self.current_filter == 'issue_assigned':
+            queryset = queryset.filter(notification__notification_type='ISSUE_ASSIGNED')
+        elif self.current_filter == 'system_alert':
+            queryset = queryset.filter(notification__notification_type='SYSTEM_ALERT')
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Expose active state filters to track UI button highlights
+        context['current_filter'] = self.current_filter
+        return context
