@@ -1,8 +1,8 @@
 {% extends "users/index.html" %}
 
-{% block title %}Inbox Feed - Bug Tracker{% endblock %}
+{% block title %}Teams - Bug Tracker{% endblock %}
 
-{% block nav_issues_active %}active{% endblock %}
+{% block nav_teams_active %}active{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -11,76 +11,22 @@
         font-size: 0.875rem;
     }
 
-    /* Unified Inbox Card Styles matching the Bug Tracker theme */
-    .inbox-row-card {
+    /* Unified Card Styles matching the Bug Tracker theme */
+    .team-card {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
         display: flex;
+        flex-direction: column;
         justify-content: space-between;
-        align-items: center;
-        text-decoration: none !important;
         position: relative;
         overflow: hidden;
     }
-    
-    .inbox-row-card:hover {
-        transform: translateY(-2px);
+    .team-card:hover {
+        transform: translateY(-5px);
         background: rgba(255, 255, 255, 0.07);
         border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Unread Left Border Highlight Strips mapped to your Application Types */
-    .inbox-row-card.unread-highlight {
-        background: rgba(78, 115, 223, 0.05);
-        border-left: 4px solid #4e73df;
-    }
-    .inbox-row-card.unread-highlight:hover {
-        background: rgba(78, 115, 223, 0.09);
-    }
-
-    /* Target specific custom borders based on core notification categories */
-    .inbox-row-card.type-status-changed { border-left: 4px solid #f6c23e; } /* Warning Yellow */
-    .inbox-row-card.type-issue-assigned { border-left: 4px solid #1cc88a; } /* Success Green */
-    .inbox-row-card.type-system-alert { border-left: 4px solid #e74a3b; }   /* Error Red */
-
-    /* Glassmorphic Pagination Styles */
-    .custom-pagination {
-        display: flex;
-        gap: 6px;
-        list-style: none;
-        padding: 0;
-    }
-    .custom-page-item .custom-page-link {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: rgba(255, 255, 255, 0.7);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .custom-page-item:hover .custom-page-link {
-        background: rgba(255, 255, 255, 0.08);
-        color: #fff;
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-    .custom-page-item.active .custom-page-link {
-        background: #4e73df;
-        color: #fff;
-        border-color: #4e73df;
-    }
-    .custom-page-nav-btn {
-        padding: 6px 8px !important;
     }
 
     /* Metric Empty State Container */
@@ -93,112 +39,81 @@
 {% endblock %}
 
 {% block dashboard_content %}
+    {% block page_header %}
     {# Header Section #}
     <div class="row mb-4 align-items-center">
         <div class="col d-flex align-items-center">
-            <span class="material-icons text-primary fs-2 me-2">notifications</span>
+            <span class="material-icons text-primary fs-2 me-2">groups</span>
             <div>
-                <h2 class="text-white fw-bold mb-1">Notifications Inbox</h2>
-                <p class="text-white-50 small mb-0">Unified timeline tracking historical updates, team assignments, and task updates.</p>
+                <h2 class="text-white fw-bold mb-1">Teams</h2>
+                <p class="text-white-50 small mb-0">Manage your project teams and collaborators.</p>
             </div>
         </div>
+        {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+            <div class="col-auto d-flex align-items-center">
+                <a href="{% url 'users:team_create' %}"
+                   class="btn btn-sm btn-primary py-2 px-3 fw-bold tracking-tighter d-flex align-items-center">
+                    <span class="material-icons me-1 fs-6">add</span>
+                    ADD TEAM
+                </a>
+            </div>
+        {% endif %}
     </div>
+    {% endblock %}
 
-    {# Inbox Data Row Container #}
-    <div class="row">
-        <div class="col-12">
-            {% if user_notifications %}
-                {% for item in user_notifications %}
-                    
-                    {# Dynamic Generic Relation Endpoint Resolver Mapping #}
-                    <a href="{% if item.notification.content_type.model == 'issue' %}{% url 'issues:issue_detail' item.notification.object_id %}{% else %}#{% endif %}" 
-                       class="inbox-row-card {% if not item.is_read %}unread-highlight{% endif %} type-{{ item.notification.notification_type|lower }}"
-                       onclick="markSingleNotificationRead({{ item.id }})">
-                        
-                        <div class="d-flex align-items-start gap-3">
-                            {# Dynamic Theme Colors Matching the Base Engine Layout Profile #}
-                            <span class="material-icons mt-1 {% if item.notification.notification_type == 'STATUS_CHANGED' %}text-warning{% elif item.notification.notification_type == 'ISSUE_ASSIGNED' %}text-success{% else %}text-info{% endif %}" style="font-size: 1.25rem;">
-                                {% if item.notification.notification_type == 'STATUS_CHANGED' %}sync{% elif item.notification.notification_type == 'ISSUE_ASSIGNED' %}person_add{% else %}assignment{% endif %}
-                            </span>
-                            
-                            <div>
-                                <div class="text-white fw-bold d-flex align-items-center flex-wrap gap-2" style="font-size: 0.925rem;">
-                                    {{ item.notification.title }}
-                                    {% if not item.is_read %}
-                                        <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">New</span>
-                                    {% endif %}
-                                </div>
-                                <div class="text-white-50 smaller mt-1 lh-base text-break" style="max-width: 850px;">
-                                    {{ item.notification.message }}
-                                </div>
-                                
-                                <div class="smaller mt-2 d-flex align-items-center gap-3 text-white-50" style="font-size: 0.725rem; opacity: 0.8;">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <span class="material-icons opacity-50" style="font-size: 0.95rem;">person</span>
-                                        <span>Triggered By: <strong class="text-white">{{ item.notification.sender.get_full_name|default:item.notification.sender.username|default:"System Engine" }}</strong></span>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <span class="material-icons opacity-50" style="font-size: 0.95rem;">layers</span>
-                                        <span class="text-uppercase text-info fw-bold" style="font-size: 0.65rem;">{{ item.notification.get_scope_display }} Scope</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {# Unified Timestamp Section #}
-                        <div class="text-end text-white-50 px-2 smaller flex-shrink-0" style="font-size: 0.775rem; min-width: 100px;">
-                            <div class="d-flex align-items-center justify-content-end gap-1">
-                                <span class="material-icons opacity-50" style="font-size: 0.85rem;">schedule</span>
-                                <span>{{ item.notification.created_at|date:"M d, H:i" }}</span>
-                            </div>
-                        </div>
-                    </a>
-                {% endfor %}
-
-                {# Dynamic Interface Pagination Engine Hooks #}
-                {% if is_paginated %}
-                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-white border-opacity-10">
-                    <div class="text-white-50 smaller">
-                        Showing entries <strong>{{ page_obj.start_index }}</strong> to <strong>{{ page_obj.end_index }}</strong> of total <strong>{{ paginator.count }}</strong> Records
+    {% block content %}
+    <div class="row g-3">
+        {% for team in teams %}
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+            <div class="team-card p-3 w-100 text-white">
+                
+                {# Card Body Content #}
+                <div class="mb-3">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <span class="material-icons text-info" style="font-size: 1.25rem;">group</span>
+                        <h5 class="fw-bold text-white mb-0">{{ team.name }}</h5>
                     </div>
-                    <nav aria-label="Inbox pagination framework">
-                        <ul class="custom-pagination m-0">
-                            {% if page_obj.has_previous %}
-                                <li class="custom-page-item">
-                                    <a class="custom-page-link custom-page-nav-btn" href="?page={{ page_obj.previous_page_number }}">
-                                        <span class="material-icons" style="font-size: 14px;">chevron_left</span>
-                                    </a>
-                                </li>
-                            {% endif %}
+                    
+                    <p class="text-white-50 smaller lh-base mb-3">{{ team.description|default:"No description provided."|truncatewords:15 }}</p>
+                    
+                    <div class="d-flex align-items-center gap-1 smaller text-white-50">
+                        <span class="material-icons opacity-50" style="font-size: 0.95rem;">calendar_today</span>
+                        <span>Created: <strong class="text-white">{{ team.created_at|date:"M d, Y" }}</strong></span>
+                    </div>
+                </div>
 
-                            {% for num in page_obj.paginator.page_range %}
-                                {% if page_obj.number == num %}
-                                    <li class="custom-page-item active"><span class="custom-page-link">{{ num }}</span></li>
-                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                    <li class="custom-page-item"><a class="custom-page-link" href="?page={{ num }}">{{ num }}</a></li>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if page_obj.has_next %}
-                                <li class="custom-page-item">
-                                    <a class="custom-page-link custom-page-nav-btn" href="?page={{ page_obj.next_page_number }}">
-                                        <span class="material-icons" style="font-size: 14px;">chevron_right</span>
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
+                {# Card Action Control Buttons Footer #}
+                {% if request.user.is_authenticated and request.user.team_member and request.user.team_member.has_management_role or request.user.is_superuser %}
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top border-secondary border-opacity-10">
+                    <a href="{% url 'users:team_edit' team.pk %}"
+                       class="btn btn-sm btn-outline-light py-1 px-2 smaller fw-bold d-inline-flex align-items-center gap-1">
+                        <span class="material-icons" style="font-size:14px;">edit</span>
+                        Edit
+                    </a>
+                    <a href="{% url 'users:team_delete' team.pk %}"
+                       class="btn btn-sm btn-outline-danger py-1 px-2 smaller fw-bold d-inline-flex align-items-center gap-1">
+                        <span class="material-icons" style="font-size:14px;">delete</span>
+                        Delete
+                    </a>
                 </div>
                 {% endif %}
 
-            {% else %}
-                {# Fallback Empty State Container matching Teams list design layout #}
-                <div class="metric-empty-box text-center py-5 text-white">
-                    <span class="material-icons fs-1 text-white-50 mb-2">notifications_off</span>
-                    <h4 class="text-white-50 fw-bold mb-1">Your notification feed is clear</h4>
-                    <p class="text-white-50 smaller mb-0">When system tasks mutate or assignments occur, details log here.</p>
-                </div>
-            {% endif %}
+            </div>
         </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="metric-empty-box text-center py-5 text-white">
+                <span class="material-icons fs-1 text-white-50 mb-2">groups</span>
+                <h4 class="text-white-50 fw-bold mb-1">No teams found</h4>
+                <p class="text-white-50 smaller mb-3">Create your first team to start organizing your work.</p>
+                <a href="{% url 'users:team_create' %}"
+                   class="btn btn-sm btn-primary py-2 px-3 fw-bold tracking-tighter d-inline-flex align-items-center">
+                    <span class="material-icons me-1 fs-6">add</span>
+                    ADD TEAM
+                </a>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    {% endblock %}
 {% endblock %}
