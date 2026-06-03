@@ -7,6 +7,12 @@ from django.views import View
 from .models import UserNotificationStatus
 
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.http import JsonResponse
+from django.utils import timezone
+from .models import UserNotificationStatus  # Adjust import path based on your app structure
+
 class UserNotificationAPIView(LoginRequiredMixin, View):
     """
     Class-Based View handling AJAX interactions for the global notification 
@@ -15,15 +21,18 @@ class UserNotificationAPIView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         """
-        Returns JSON containing the unread counter and the latest 10 notifications.
+        Returns JSON containing the unread counter and the latest 10 notifications,
+        strictly excluding notifications sent by the requesting user themselves.
         """
+        # EXCLUSION CHANGE HERE: .exclude(notification__sender=request.user)
         user_notifications = (
             UserNotificationStatus.objects.filter(user=request.user)
+            .exclude(notification__sender=request.user)
             .select_related('notification', 'notification__sender')
             .order_by('-notification__created_at')
         )
 
-        # 1. Fetch live unread metric count
+        # 1. Fetch live unread metric count (implicitly excludes sender-triggered events now)
         unread_count = user_notifications.filter(is_read=False).count()
 
         # 2. Serialize recent 10 feed rows 
@@ -57,7 +66,11 @@ class UserNotificationAPIView(LoginRequiredMixin, View):
         notification_id = request.POST.get('notification_id')
         mark_all = request.POST.get('mark_all') == 'true'
 
-        base_queryset = UserNotificationStatus.objects.filter(user=request.user, is_read=False)
+        # EXCLUSION CHANGE HERE ALSO: Added protection to ensure users cannot manipulate items they sent
+        base_queryset = UserNotificationStatus.objects.filter(
+            user=request.user, 
+            is_read=False
+        ).exclude(notification__sender=request.user)
 
         # Case A: Clear/Mark all records at once
         if mark_all:
@@ -91,7 +104,6 @@ class UserNotificationAPIView(LoginRequiredMixin, View):
             'status': 'error', 
             'message': 'Missing operational tracking parameters.'
         }, status=400)
-    
 
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin

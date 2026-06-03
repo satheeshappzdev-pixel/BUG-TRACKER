@@ -149,7 +149,7 @@
         position: fixed;
         top: 30px;
         right: 24px;
-        z-index: 1040;
+        z-index: 1100;
         display: flex;
         align-items: center;
     }
@@ -227,7 +227,7 @@
         display: none;
         flex-direction: column;
         overflow: hidden;
-        z-index: 1080;
+        z-index: 1110;
     }
 
     .layout-bell-dropdown-panel.layout-show {
@@ -243,6 +243,78 @@
         align-items: center;
         font-weight: 700;
         font-size: 0.875rem;
+    }
+
+    /* --- Cleaning / Sweeping Animation Classes --- */
+    .btn-sweep-clean {
+        position: relative;
+        cursor: pointer;
+        font-size: 0.75rem;
+        color: #4e73df !important;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: transparent;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 6px;
+        overflow: hidden;
+        transition: color 0.2s easy-in-out, opacity 0.2s;
+    }
+    .btn-sweep-clean:hover {
+        color: #60a5fa !important;
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .btn-sweep-clean .clean-icon {
+        font-size: 14px !important;
+        display: none;
+        opacity: 0;
+        transform: rotate(0deg);
+    }
+
+    /* Active State Class applied by JS during processing */
+    .btn-sweep-clean.is-cleaning {
+        color: #a3e635 !important; /* Bright clean lime tint */
+        pointer-events: none;
+    }
+    .btn-sweep-clean.is-cleaning .clean-icon {
+        display: inline-block;
+        animation: brushWiggleSweep 0.6s infinite ease-in-out, fadeInIcon 0.2s forwards;
+    }
+    .btn-sweep-clean.is-cleaning::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.3), transparent);
+        animation: textSweepGlow 1.2s infinite linear;
+    }
+
+    /* Row sweep effect out state */
+    .layout-bell-row-item.sweeping-out {
+        transform: translateX(100%);
+        opacity: 0;
+        height: 0;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        border: none !important;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 1, 1), opacity 0.3s ease, height 0.3s ease 0.1s;
+    }
+
+    @keyframes fadeInIcon {
+        to { opacity: 1; }
+    }
+    @keyframes brushWiggleSweep {
+        0%, 100% { transform: rotate(0deg) translateY(0); }
+        25% { transform: rotate(-15deg) translateY(-1px); }
+        75% { transform: rotate(15deg) translateY(1px); }
+    }
+    @keyframes textSweepGlow {
+        0% { left: -100%; }
+        100% { left: 100%; }
     }
     
     /* Sleek Custom Scrollbar for Glass Menu Dropdown panel */
@@ -266,11 +338,12 @@
     .layout-bell-row-item {
         padding: 14px 18px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: background-color 0.2s ease;
+        transition: background-color 0.2s ease, transform 0.3s ease, opacity 0.3s ease, height 0.3s ease;
         cursor: pointer;
         display: flex;
         flex-direction: column;
         gap: 4px;
+        overflow: hidden;
     }
     .layout-bell-row-item:hover { background-color: rgba(255, 255, 255, 0.04); }
     .layout-bell-row-item.layout-unread { background-color: rgba(78, 115, 223, 0.08); }
@@ -303,8 +376,8 @@
     /* --- Floating Glass Toast Engine CSS System --- */
     #glass-toast-container {
         position: fixed;
-        top: 24px;
-        right: 84px; /* Offset to clearly clear the new floating bell button */
+        top: 96px;
+        right: 24px; 
         z-index: 1099;
         display: flex;
         flex-direction: column;
@@ -390,7 +463,10 @@
             <div class="layout-bell-dropdown-panel" id="layoutUniqueBellDropdownPanel">
                 <div class="layout-bell-dropdown-header text-white">
                     <span>Notifications Feed</span>
-                    <span id="layoutUniqueMarkAllReadBtn" style="cursor: pointer; font-size: 0.75rem; color: #4e73df !important; font-weight: 700;">Mark all as read</span>
+                    <button id="layoutUniqueMarkAllReadBtn" class="btn-sweep-clean">
+                        <span class="material-icons clean-icon">auto_fix_high</span>
+                        <span class="btn-text">Mark all as read</span>
+                    </button>
                 </div>
                 
                 <div class="layout-bell-scroll-container" id="layoutUniqueBellItemsContainer">
@@ -626,7 +702,7 @@
                         const senderName = item.sender || "System";
 
                         itemsHtml += `
-                            <div class="layout-bell-row-item ${unreadClass}" onclick="markSingleNotificationRead(${item.id})">
+                            <div class="layout-bell-row-item ${unreadClass}" data-id="${item.id}" onclick="markSingleNotificationRead(${item.id}, this)">
                                 <span class="text-white fw-bold small" style="font-size:0.8rem;">${item.title}</span>
                                 <span class="text-white-50 smaller mt-1" style="font-size:0.75rem; line-height:1.3;">${item.message}</span>
                                 <div class="layout-bell-meta-footer text-muted">
@@ -655,19 +731,26 @@
         }
 
         /**
-         * Interactive Action: Mark a single notification row item as Read via POST
+         * Interactive Action: Mark a single notification row item as Read via POST with row sweeping transition
          */
-        function markSingleNotificationRead(id) {
+        function markSingleNotificationRead(id, element) {
+            if (!element) return;
+            
+            // Add individual sweep effect
+            element.classList.add('sweeping-out');
+            
             const formData = new FormData();
             formData.append('notification_id', id);
             
-            fetch('/notifications/api/live/', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(() => pollLiveNotificationCenter());
+            setTimeout(() => {
+                fetch('/notifications/api/live/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(() => pollLiveNotificationCenter());
+            }, 300);
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -705,19 +788,50 @@
             if (markAllBtn) {
                 markAllBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    
+                    const btnTextNode = markAllBtn.querySelector('.btn-text');
+                    const unreadRows = document.querySelectorAll('.layout-bell-row-item.layout-unread');
+                    
+                    // Activate cleaning animations
+                    markAllBtn.classList.add('is-cleaning');
+                    if (btnTextNode) btnTextNode.textContent = 'Cleaning...';
+
+                    // Sweep out all current active rows visually
+                    unreadRows.forEach((row, index) => {
+                        setTimeout(() => {
+                            row.classList.add('sweeping-out');
+                        }, index * 60); 
+                    });
+
                     const formData = new FormData();
                     formData.append('mark_all', 'true');
 
-                    fetch('/notifications/api/live/', {
-                        method: 'POST',
-                        headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
-                        body: formData
-                    })
-                    .then(res => res.json())
-                    .then(() => {
-                        dropdownPanel.classList.remove('layout-show');
-                        pollLiveNotificationCenter();
-                    });
+                    // Allow time for the visual sweep transition to complete before request resolution
+                    setTimeout(() => {
+                        fetch('/notifications/api/live/', {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(() => {
+                            // Reset button configurations
+                            markAllBtn.classList.remove('is-cleaning');
+                            if (btnTextNode) btnTextNode.textContent = 'Mark all as read';
+                            
+                            triggerGlobalConfettiExplosion();
+                            
+                            setTimeout(() => {
+                                dropdownPanel.classList.remove('layout-show');
+                                pollLiveNotificationCenter();
+                            }, 400);
+                        })
+                        .catch(() => {
+                            markAllBtn.classList.remove('is-cleaning');
+                            if (btnTextNode) btnTextNode.textContent = 'Mark all as read';
+                            pollLiveNotificationCenter();
+                        });
+                    }, Math.max(400, unreadRows.length * 60));
                 });
             }
 
