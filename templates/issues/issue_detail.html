@@ -128,7 +128,39 @@
         transform: translateY(-2px);
         filter: brightness(1.1);
     }
+
+    /* CKEditor Custom Theme adjustments to blend with dark mode UI */
+    .ck-editor__editable_inline {
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        color: white !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        min-height: 150px;
+    }
+    .ck.ck-editor__main>.ck-editor__editable:not(.ck-focused) {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    .ck.ck-toolbar {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    .ck.ck-button {
+        color: #fff !important;
+        cursor: pointer;
+    }
+    .ck.ck-button:hover, .ck.ck-button.ck-on {
+        background: rgba(255, 255, 255, 0.15) !important;
+    }
+    .ck.ck-dropdown__panel {
+        background: #0a102e !important;
+    }
+    .ck.ck-list__item, .ck.ck-button .ck-button__label {
+        color: white !important;
+    }
+    .ck.ck-list__item .ck-button:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
 </style>
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
 {% endblock %}
 
 {% block dashboard_content %}
@@ -260,6 +292,16 @@
                 <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm fw-bold border-0">
                     <span class="material-icons fs-6 me-1 align-middle">send</span> Add Discussion
                 </button>
+
+                <script>
+                    ClassicEditor
+                        .create(document.querySelector('#{{ remark_form.remark.id_for_label }}'), {
+                            toolbar: [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo' ]
+                        })
+                        .catch(error => {
+                            console.error(error);
+                        });
+                </script>
             </form>
 
             <h2 class="section-label mb-4">Issue History Log</h2>

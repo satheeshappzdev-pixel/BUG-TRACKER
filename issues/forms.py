@@ -4,8 +4,18 @@ from .models import Project, Issue, IssueRemarkLog
 from .choices import IssueEnvironmentChoices, IssuePriorityChoices, IssueStatusChoices, IssueTypeChoices, TeamMemberRoleChoices, UserModelChoiceField
 from .models import Tag
 from django.contrib.auth import get_user_model
-
 User = get_user_model()
+
+# Create custom field classes to override the displayed option label
+class UserFullChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        # Fallback to username if first and last name are empty
+        return obj.get_full_name() or obj.username
+
+class UserFullMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        # Fallback to username if first and last name are empty
+        return obj.get_full_name() or obj.username
 
 class ProjectForm(forms.ModelForm):
     owner = UserModelChoiceField(
@@ -51,14 +61,12 @@ class IssueForm(forms.ModelForm):
         choices=IssueTypeChoices.choices,
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
-    assignee = forms.ModelChoiceField(  # Using standard ModelChoiceField or your custom UserModelChoiceField
+    assignee = UserFullChoiceField(
         queryset=User.objects.filter(is_superuser=False, is_active=True),
         widget=forms.Select(attrs={'class': 'form-select'}),
         required=False,
     )
-    
-    # NEW: Enhanced Multi-Select Widget
-    co_assignees = forms.ModelMultipleChoiceField(
+    co_assignees = UserFullMultipleChoiceField(
         queryset=User.objects.filter(is_superuser=False, is_active=True),
         widget=forms.SelectMultiple(attrs={'class': 'form-select select2-multi', 'multiple': 'multiple'}),
         required=False,

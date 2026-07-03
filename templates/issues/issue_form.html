@@ -680,5 +680,19 @@
         </div>
     </div>
 </form>
+
+<script>
+    const toolbarConfig = [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo' ];
+
+    if (document.querySelector('#{{ form.description.id_for_label }}')) {
+        ClassicEditor.create(document.querySelector('#{{ form.description.id_for_label }}'), { toolbar: toolbarConfig }).catch(error => console.error(error));
+    }
+    if (document.querySelector('#{{ form.remarks.id_for_label }}')) {
+        ClassicEditor.create(document.querySelector('#{{ form.remarks.id_for_label }}'), { toolbar: toolbarConfig }).catch(error => console.error(error));
+    }
+    if (document.querySelector('#{{ form.qa_note.id_for_label }}')) {
+        ClassicEditor.create(document.querySelector('#{{ form.qa_note.id_for_label }}'), { toolbar: toolbarConfig }).catch(error => console.error(error));
+    }
+</script>
 {% endblock %}
 {% endblock %}
