@@ -505,7 +505,6 @@ from django.utils import timezone
 from datetime import timedelta
 # Assuming these imports exist in your project structure:
 # from .models import Issue, TeamMemberRoleChoices
-
 class MyIssueListView(LoginRequiredMixin, ListView):
     model = Issue
     template_name = 'issues/my_task.html'
@@ -547,7 +546,7 @@ class MyIssueListView(LoginRequiredMixin, ListView):
             else:
                 qs = qs.filter(status=status)
             
-        return qs.select_related('project', 'assignee', 'reporter').prefetch_related('tags', 'co_assignees').distinct().order_by('-created_at')
+        return qs.select_related('project', 'assignee', 'reporter', 'assignee__team_member', 'reporter__team_member').prefetch_related('tags', 'co_assignees').distinct().order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
